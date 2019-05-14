@@ -1,0 +1,3 @@
+[submodule "mondrianjs"]
+	path = mondrianjs
+	url = git@github.com:nettoyeurny/mondrianjs.git
