@@ -130,9 +130,9 @@ packages:
   chronosgl:
     dependency: "direct main"
     description:
-      path: "../ChronosGL"
-      relative: true
-    source: path
+      name: chronosgl
+      url: "https://pub.dartlang.org"
+    source: hosted
     version: "3.6.0"
   code_builder:
     dependency: transitive
