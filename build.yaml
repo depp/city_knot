@@ -1,0 +1,16 @@
+# https://github.com/dart-lang/build/blob/master/docs/build_yaml_format.md
+# https://webdev.dartlang.org/tools/dart2js
+targets:
+  $default:
+    builders:
+      build_web_compilers|entrypoint:
+        # These are globs for the entry-points you want to compile.
+        generate_for:
+        - web/**.dart
+        release_options:
+          compiler: dart2js
+          # List any dart2js specific args here, or omit it.
+          dart2js_args:
+          - -O4
+        dev_options:
+          compiler: dartdevc
