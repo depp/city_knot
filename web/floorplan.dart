@@ -28,9 +28,9 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:vector_math/vector_math.dart' as VM;
-import 'logging.dart';
 
 import 'geometry.dart';
+import 'logging.dart';
 
 const double kMaxCarMovement = 0.5;
 
@@ -89,7 +89,6 @@ int RandomSetBit(Random rng, int bits, int n) {
   }
   return last ^ bits;
 }
-
 
 class WorldMap {
   WorldMap(this._w, this._h, bool isTorus) {
@@ -156,7 +155,7 @@ class WorldMap {
 
   void MergeTile(int x, int y, int new_kind) {
     //LogInfo("merge");
-    final int index = x + y * _w;
+    final int index = (x % _w) + (y % _h) * _w;
     final int old_kind = _tiles[index];
     final int old_type = FloorplanGetTileType(old_kind);
     final int new_type = FloorplanGetTileType(new_kind);
@@ -375,14 +374,27 @@ class PosDouble {
   }
 }
 
+List<int> CreateRoadIntervals(Random rng, int start, int end) {
+  List<int> out = [];
+  for (int x = start;
+      x < end;
+      x += kMinRoadDistance + rng.nextInt(kMinRoadDistance)) {
+    out.add(x);
+    out.add(6 + rng.nextInt(6));
+  }
+  return out;
+}
+
 class Floorplan {
   Floorplan(this._w, this._h, int nSkyscrapers, Random rng)
       : _map = WorldMap(_w, _h, true) {
     LogInfo("Creating world ${_w} x ${_h}");
 
     LogInfo("Creating Roads");
+    // Short ring roads
     InitRoads(rng, kDirSouth, kDirNorth, _w, _h);
-    InitRoads(rng, kDirWest, kDirEast, _h, _w);
+    // Long torus roads
+    InitRoadsSemiRandom(rng, kDirWest, kDirEast, _h, _w);
     LogInfo("Creating Skyscrapers");
     // InitSkyscrapers(rng, nSkyscrapers);
     LogInfo("Creating Regular Buildings");
@@ -440,17 +452,37 @@ class Floorplan {
 
   void InitRoads(Random rng, int dir1, int dir2, int w, int len) {
     int outerW = 11;
+    List<int> intervals = CreateRoadIntervals(
+        rng, kMinRoadDistance, w - kMinRoadDistance - outerW ~/ 2);
+
+    for (int i = 0; i < intervals.length; i += 2) {
+      _roads.add(Road(intervals[i], dir1, dir2, intervals[i + 1], len, _map));
+    }
     // TODO
     // _roads.add(Road(kWorldBorder, dir1, dir2, outerW, _map));
     // _roads.add(Road(_w - kWorldBorder - outerW, dir1, dir2, outerW, _map));
-    for (int x = kMinRoadDistance;
-        x < w - kMinRoadDistance - outerW ~/ 2;
-        x += kMinRoadDistance + rng.nextInt(kMinRoadDistance)) {
-      int width = 6 + rng.nextInt(6);
-      _roads.add(Road(x, dir1, dir2, width, len, _map));
+
+    LogInfo("road count: ${_roads.length}");
+  }
+
+  void InitRoadsSemiRandom(Random rng, int dir1, int dir2, int w, int len) {
+    int width;
+
+    width = 7 + rng.nextInt(6);
+    List<int> intervals = [
+      w - width ~/ 2,
+      width,
+      w ~/ 2 - width ~/ 2,
+      width,
+      w ~/ 4 - width ~/ 2,
+      width,
+      w * 3 ~/ 4 - width ~/ 2,
+      width,
+    ];
+    
+    for (int i = 0; i < intervals.length; i += 2) {
+      _roads.add(Road(intervals[i], dir1, dir2, intervals[i + 1], len, _map));
     }
-    LogInfo("road count: ${_roads.length}");
-    LogInfo("road count: ${_roads.length}");
   }
 
   void InitSkyscrapers(Random rng, int n) {
@@ -542,14 +574,20 @@ class Floorplan {
         if (w < 9) continue;
         if (h < 9) continue;
 
-        double altitude;
+        double altitude = 20;
         int offset = 1;
-        int kind  = kTileBuildingSimple;
+        int kind = kTileBuildingSimple;
         plot.x = x * 1.0;
         plot.y = y * 1.0;
         plot.w = w * 1.0;
         plot.h = h * 1.0;
         // TODO
+
+        if (y < _h * 0.1 || y > _h * 0.7) {
+          if (0 == rng.nextInt(4)) {
+            altitude = 20.0 + rng.nextInt(15) * 4;
+          }
+        }
         /*
         if (_wc.IsWithinCenter(plot)) {
           altitude = 15.0 + rng.nextInt(15);
@@ -642,4 +680,3 @@ HTML.CanvasElement RenderCanvasWorldMap(
   c.putImageData(id, 0, 0);
   return canvas;
 }
-

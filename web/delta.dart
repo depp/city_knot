@@ -3,9 +3,9 @@ import 'dart:math' as Math;
 
 import 'package:chronosgl/chronosgl.dart' as CGL;
 import 'package:vector_math/vector_math.dart' as VM;
-import 'logging.dart';
 
 import 'floorplan.dart';
+import 'logging.dart';
 
 VM.Vector3 p1 = VM.Vector3.zero();
 
@@ -80,8 +80,8 @@ class TorusKnotCamera extends CGL.Spatial {
     //offset.scale(-1.0);
     point.add(offset);
     target.add(offset);
-    setPosFromVec(point);
 
+    setPosFromVec(point);
     lookAt(target, offset);
   }
 }
@@ -161,14 +161,12 @@ CGL.GeometryBuilder MakeBuilding(double dx, double dy, double dz) {
   return gb;
 }
 
-
-
 void AddBuildings(CGL.ChronosGL cgl, CGL.Scene scene, Floorplan floorplan,
     CGL.GeometryBuilder torus, CGL.Material mat) {
   print("building statr ${floorplan.GetBuildings().length}");
 
   VM.Vector3 GetVertex(int x, int y) {
-    return torus.vertices[x + y * (kWidth+1)];
+    return torus.vertices[x + y * (kWidth + 1)];
   }
 
   CGL.GeometryBuilder out = CGL.GeometryBuilder();
@@ -185,7 +183,7 @@ void AddBuildings(CGL.ChronosGL cgl, CGL.Scene scene, Floorplan floorplan,
     VM.Vector3 centerW = GetVertex(x + w ~/ 2 + 1, y + h ~/ 2);
     VM.Vector3 centerH = GetVertex(x + w ~/ 2, y + h ~/ 2 + 1);
 
-    final CGL.GeometryBuilder gb = MakeBuilding(h + 0.0, w + 0.0, kBuildingDim);
+    final CGL.GeometryBuilder gb = MakeBuilding(h + 0.0, w + 0.0, b.height);
 
     VM.Vector3 dir1 = centerW - center;
     VM.Vector3 dir2 = centerH - center;
@@ -201,7 +199,7 @@ void AddBuildings(CGL.ChronosGL cgl, CGL.Scene scene, Floorplan floorplan,
 
     out.MergeAndTakeOwnership(gb, transform.transform);
   }
-  print ("final building gb ${out}");
+  print("final building gb ${out}");
   CGL.MeshData buildings =
       CGL.GeometryBuilderToMeshData("buildings", scene.program, out);
   CGL.Node node = CGL.Node("", buildings, mat);
@@ -235,8 +233,8 @@ void main() {
 
   final CGL.Scene sceneTorus = CGL.Scene(
       "objects",
-      CGL.RenderProgram("torus", cgl, CGL.texturedVertexShader,
-          CGL.texturedFragmentShader),
+      CGL.RenderProgram(
+          "torus", cgl, CGL.texturedVertexShader, CGL.texturedFragmentShader),
       [perspective]);
 
   final CGL.Scene sceneBuilding = CGL.Scene(
@@ -253,8 +251,10 @@ void main() {
   final CGL.GeometryBuilder torus = TorusKnotWithCustumUV();
   AddBuildings(cgl, sceneBuilding, floorplan, torus, matBuilding);
 
-  sceneTorus.add(CGL.Node("torus",
-      CGL.GeometryBuilderToMeshData("torusknot", sceneTorus.program, torus), mat));
+  sceneTorus.add(CGL.Node(
+      "torus",
+      CGL.GeometryBuilderToMeshData("torusknot", sceneTorus.program, torus),
+      mat));
   CGL.Node mover = CGL.Node("moving-ball", Sphere(sceneTorus.program, 25), mat);
   sceneTorus.add(mover);
 
