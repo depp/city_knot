@@ -479,7 +479,7 @@ class Floorplan {
       w * 3 ~/ 4 - width ~/ 2,
       width,
     ];
-    
+
     for (int i = 0; i < intervals.length; i += 2) {
       _roads.add(Road(intervals[i], dir1, dir2, intervals[i + 1], len, _map));
     }
