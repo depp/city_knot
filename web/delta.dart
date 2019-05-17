@@ -20,6 +20,12 @@ const double kBuildingDim = 20;
 final HTML.InputElement gCameraMode =
     HTML.document.querySelector('#toruscam') as HTML.InputElement;
 
+final HTML.InputElement gInsideCamera =
+    HTML.document.querySelector('#insidecam') as HTML.InputElement;
+
+final HTML.SelectElement gCameraRoute =
+    HTML.document.querySelector('#routecam') as HTML.SelectElement;
+
 void buildPlaneVectors(
     final VM.Vector3 planeNormal, VM.Vector3 u, VM.Vector3 v) {
   final double a =
@@ -38,18 +44,32 @@ void buildPlaneVectors(
     ..normalize();
 }
 
+VM.Vector3 getRoute(VM.Vector3 v1, VM.Vector3 v2) {
+  switch (gCameraRoute.value) {
+    case "0":
+      return v1;
+    case "3":
+      return v2;
+    case "6":
+      return -v1;
+    case "9":
+      return -v2;
+    default:
+      return v1;
+  }
+}
+
 // Camera flying through a TorusKnot like through a tunnel
 class TorusKnotCamera extends CGL.Spatial {
   TorusKnotCamera(
       {this.radius = kRadius,
-      this.tubeRadius = kTubeRadius,
       this.p = 2,
       this.q = 3,
       this.heightScale = kHeightScale})
       : super("camera:torusknot");
 
   final double radius;
-  final double tubeRadius;
+  double _tubeRadius = 1.0;
   final int p;
   final int q;
   final double heightScale;
@@ -74,8 +94,8 @@ class TorusKnotCamera extends CGL.Spatial {
 
     VM.Vector3 v2 = VM.Vector3.zero();
     buildPlaneVectors(tangent, v1, v2);
-    VM.Vector3 offset = v1;
-    offset.scale(this.tubeRadius + 50.0);
+    VM.Vector3 offset = getRoute(v1, v2);
+    offset.scale(this._tubeRadius);
 
     //offset.scale(-1.0);
     point.add(offset);
@@ -83,6 +103,10 @@ class TorusKnotCamera extends CGL.Spatial {
 
     setPosFromVec(point);
     lookAt(target, offset);
+  }
+
+  void SetTubeRadius(double tr) {
+    this._tubeRadius = tr;
   }
 }
 
@@ -213,10 +237,9 @@ void main() {
   HTML.CanvasElement canvas = HTML.document.querySelector('#webgl-canvas');
   CGL.ChronosGL cgl = CGL.ChronosGL(canvas);
   cgl.enable(CGL.GL_CULL_FACE);
-  TorusKnotCamera tkc = TorusKnotCamera();
-  CGL.OrbitCamera oc =
-      CGL.OrbitCamera(kRadius * 3.5, 0.0, 0.0, HTML.document.body)
-        ..mouseWheelFactor = -0.2;
+  final TorusKnotCamera tkc = TorusKnotCamera();
+  final CGL.OrbitCamera oc = CGL.OrbitCamera(kRadius * 3.5, 0.0, 0.0, canvas)
+    ..mouseWheelFactor = -0.2;
   final CGL.Perspective perspective = CGL.Perspective(tkc, 0.1, 20000.0);
   perspective.UpdateFov(60.0);
 
@@ -267,6 +290,7 @@ void main() {
     // allow the camera to also reflect mouse movement.
     oc.animate(elapsed);
 
+    tkc.SetTubeRadius(gInsideCamera.checked ? 1.0 : kTubeRadius + 50.0);
     tkc.animate(_lastTimeMs * 0.5);
     mover.transform.setFrom(tkc.transform);
     //updateTorusTexture(timeMs / 1000, canvas2d);
