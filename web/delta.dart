@@ -29,6 +29,8 @@ final HTML.SelectElement gCameraRoute =
 final HTML.SelectElement gTheme =
     HTML.document.querySelector('#theme') as HTML.SelectElement;
 
+final HTML.Element gClock = HTML.document.querySelector('#clock');
+
 void buildPlaneVectors(
     final VM.Vector3 planeNormal, VM.Vector3 u, VM.Vector3 v) {
   final double a =
@@ -159,8 +161,8 @@ CGL.MeshData Sphere(CGL.RenderProgram program, double scale) {
 CGL.Texture MakeFloorplanTexture(CGL.ChronosGL cgl, Floorplan floorplan) {
   LogInfo("make floorplan");
 
-  HTML.CanvasElement canvas = RenderCanvasWorldMap(floorplan.world_map,
-      VM.Vector3(0.25, 0.25, 0.25), VM.Vector3(0.1, 0.1, 0.1));
+  HTML.CanvasElement canvas =
+      RenderCanvasWorldMap(floorplan.world_map, kTileToColorsStandard);
   //dynamic ctx = canvas.getContext("2d");
   // ctx.fillText("Hello World", 10, 50);
   // CGL.TextureProperties tp = CGL.TextureProperties()..flipY;
@@ -330,6 +332,7 @@ void main() {
         break;
     }
     phase.Draw();
+    gClock.text = DurationFormat(timeMs);
     HTML.window.animationFrame.then(animate);
     fps.UpdateFrameCount(_lastTimeMs);
   }

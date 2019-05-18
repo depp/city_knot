@@ -14,8 +14,7 @@ void main() {
   final Math.Random gRng = Math.Random();
   final FLOORPLAN.Floorplan floorplan = FLOORPLAN.Floorplan(900, 300, 10, gRng);
 
-  HTML.CanvasElement canvas = FLOORPLAN.RenderCanvasWorldMap(floorplan.world_map,
-      VM.Vector3(0.25, 0.25, 0.25), VM.Vector3(0.1, 0.1, 0.1));
+  HTML.CanvasElement canvas = FLOORPLAN.RenderCanvasWorldMap(floorplan.world_map);
   gContainer.children.add(canvas);
 }
 

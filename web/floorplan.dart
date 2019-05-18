@@ -612,7 +612,8 @@ class Floorplan {
   }
 }
 
-Map<int, VM.Vector3> tileToColor = {
+final Map<int, VM.Vector3> kTileToColorsExtrame = {
+  kTileEmpty: VM.Vector3(0.1, 0.1, 0.1),
   kTileLane: VM.Vector3(1.0, 0.0, 0.0),
   kTileSidewalk: VM.Vector3(0.0, 1.0, 1.0),
   kTileSidewalkLight: VM.Vector3(0.0, 1.0, 0.0),
@@ -624,8 +625,24 @@ Map<int, VM.Vector3> tileToColor = {
   kTileBuildingBorder: VM.Vector3(0.0, 0.0, 1.0),
 };
 
-HTML.CanvasElement RenderCanvasWorldMap(
-    WorldMap wm, VM.Vector3 lane, VM.Vector3 other) {
+final kDarkGray = VM.Vector3(0.1, 0.1, 0.1);
+
+final Map<int, VM.Vector3> kTileToColorsStandard = {
+  kTileEmpty: kDarkGray,
+  kTileLane: VM.Vector3(0.25, 0.25, 0.25),
+  kTileSidewalk: kDarkGray,
+  kTileSidewalkLight: kDarkGray,
+  kTileDivider: kDarkGray,
+  kTileBuildingSimple: kDarkGray,
+  kTileBuildingTower: kDarkGray,
+  kTileBuildingModern: kDarkGray,
+  kTileBuildingBlocky: kDarkGray,
+  kTileBuildingBorder: kDarkGray,
+};
+
+HTML.CanvasElement RenderCanvasWorldMap(WorldMap wm,
+    [Map<int, VM.Vector3> tileMap]) {
+  tileMap = tileMap ?? kTileToColorsExtrame;
   final int w = wm.width;
   final int h = wm.height;
   final HTML.CanvasElement canvas = HTML.CanvasElement()
@@ -635,39 +652,12 @@ HTML.CanvasElement RenderCanvasWorldMap(
   final HTML.ImageData id = c.createImageData(w, h);
   Uint8ClampedList data = id.data;
 
-  final int or = (other.r * 255.0).floor();
-  final int og = (other.g * 255.0).floor();
-  final int ob = (other.b * 255.0).floor();
-  for (int i = 0; i < w * h * 4; i += 4) {
-    data[i + 0] = or;
-    data[i + 1] = og;
-    data[i + 2] = ob;
-    data[i + 3] = 255;
-  }
-
-  /*
-  final int r = (lane.r * 255.0).floor();
-  final int g = (lane.g * 255.0).floor();
-  final int b = (lane.b * 255.0).floor();
-  */
   for (int x = 0; x < w; x++) {
     for (int y = 0; y < h; y++) {
       int tile = FloorplanGetTileType(wm.GetTile(x, y));
       if (tile == kTileEmpty) continue;
-      /*
-      if (tile == kTileLane) {
-        // Make texture produced from canvas compatible with our work orientation.
-        final int ix = w - x - 1;
-        final int iy = h - y - 1;
-        final int i = 4 * (iy * w + ix);
-        data[i + 0] = r;
-        data[i + 1] = g;
-        data[i + 2] = b;
-        data[i + 3] = 255;
-      }
-      */
 
-      VM.Vector3 color = tileToColor[tile];
+      VM.Vector3 color = tileMap[tile];
       final int ix = w - x - 1;
       final int iy = h - y - 1;
       final int i = 4 * (iy * w + ix);

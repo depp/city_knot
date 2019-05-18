@@ -31,9 +31,17 @@ String _D3(int n) {
   return "00${n}";
 }
 
+String TimeFormat( DateTime dt ) {
+    return "${_D2(dt.hour)}:${_D2(dt.minute)}:${_D2(dt.second)}.${_D3(dt.millisecond)}";
+}
+
+
+String DurationFormat(double mSec) {
+   return TimeFormat(DateTime.fromMillisecondsSinceEpoch(mSec.floor(), isUtc: true));
+}
+
 String _Prefix(String kind) {
-  DateTime now = DateTime.now();
-  return "${kind}:${_D2(now.hour)}:${_D2(now.minute)}:${_D2(now.second)}.${_D3(now.millisecond)}: ";
+  return kind + ":"  + TimeFormat(DateTime.now()) + ": ";
 }
 
 void LogInfo(String s) {
