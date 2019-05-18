@@ -26,6 +26,9 @@ final HTML.InputElement gInsideCamera =
 final HTML.SelectElement gCameraRoute =
     HTML.document.querySelector('#routecam') as HTML.SelectElement;
 
+final HTML.SelectElement gTheme =
+    HTML.document.querySelector('#theme') as HTML.SelectElement;
+
 void buildPlaneVectors(
     final VM.Vector3 planeNormal, VM.Vector3 u, VM.Vector3 v) {
   final double a =
@@ -166,7 +169,7 @@ CGL.Texture MakeFloorplanTexture(CGL.ChronosGL cgl, Floorplan floorplan) {
   return CGL.ImageTexture(cgl, "noise", canvas, tp);
 }
 
-CGL.GeometryBuilder MakeBuilding(double dx, double dy, double dz) {
+CGL.GeometryBuilder MakeOneBuilding(double dx, double dy, double dz) {
   CGL.GeometryBuilder gb = CGL.CubeGeometry(
       x: dx, y: dy, z: dz, uMin: 0.0, uMax: 1.0, vMin: 0.0, vMax: 1.0);
   gb.EnableAttribute(CGL.aColor);
@@ -182,11 +185,12 @@ CGL.GeometryBuilder MakeBuilding(double dx, double dy, double dz) {
   }
 
   gb.AddAttributesVector3(CGL.aColor, colors);
+  gb.GenerateWireframeCenters();
   return gb;
 }
 
-void AddBuildings(CGL.ChronosGL cgl, CGL.Scene scene, Floorplan floorplan,
-    CGL.GeometryBuilder torus, CGL.Material mat) {
+CGL.GeometryBuilder MakeBuildings(
+    Floorplan floorplan, CGL.GeometryBuilder torus) {
   print("building statr ${floorplan.GetBuildings().length}");
 
   VM.Vector3 GetVertex(int x, int y) {
@@ -197,6 +201,7 @@ void AddBuildings(CGL.ChronosGL cgl, CGL.Scene scene, Floorplan floorplan,
   out.EnableAttribute(CGL.aColor);
   out.EnableAttribute(CGL.aNormal);
   out.EnableAttribute(CGL.aTexUV);
+  out.EnableAttribute(CGL.aCenter);
 
   for (Building b in floorplan.GetBuildings()) {
     final int y = b.base.x.floor();
@@ -207,8 +212,7 @@ void AddBuildings(CGL.ChronosGL cgl, CGL.Scene scene, Floorplan floorplan,
     VM.Vector3 centerW = GetVertex(x + w ~/ 2 + 1, y + h ~/ 2);
     VM.Vector3 centerH = GetVertex(x + w ~/ 2, y + h ~/ 2 + 1);
 
-    final CGL.GeometryBuilder gb = MakeBuilding(h + 0.0, w + 0.0, b.height);
-
+    final CGL.GeometryBuilder gb = MakeOneBuilding(h + 0.0, w + 0.0, b.height);
     VM.Vector3 dir1 = centerW - center;
     VM.Vector3 dir2 = centerH - center;
     VM.Vector3 dir3 = dir1.cross(dir2)..normalize();
@@ -224,10 +228,7 @@ void AddBuildings(CGL.ChronosGL cgl, CGL.Scene scene, Floorplan floorplan,
     out.MergeAndTakeOwnership(gb, transform.transform);
   }
   print("final building gb ${out}");
-  CGL.MeshData buildings =
-      CGL.GeometryBuilderToMeshData("buildings", scene.program, out);
-  CGL.Node node = CGL.Node("", buildings, mat);
-  scene.add(node);
+  return out;
 }
 
 void main() {
@@ -252,7 +253,9 @@ void main() {
     ..SetUniform(CGL.uColor, VM.Vector3.zero());
 
   final CGL.Material matBuilding = CGL.Material("center")
-    ..SetUniform(CGL.uColor, VM.Vector3(1.0, 1.0, 0.0));
+    ..SetUniform(CGL.uColor, VM.Vector3(1.0, 1.0, 0.0))
+    ..SetUniform(CGL.uColorAlpha, VM.Vector4(1.0, 0.0, 0.0, 1.0))
+    ..SetUniform(CGL.uColorAlpha2, VM.Vector4(0.1, 0.0, 0.0, 1.0));
 
   final CGL.Scene sceneTorus = CGL.Scene(
       "objects",
@@ -260,19 +263,38 @@ void main() {
           "torus", cgl, CGL.texturedVertexShader, CGL.texturedFragmentShader),
       [perspective]);
 
-  final CGL.Scene sceneBuilding = CGL.Scene(
+  final CGL.Scene sceneBuildingNight = CGL.Scene(
       "objects",
       CGL.RenderProgram("building", cgl, CGL.multiColorVertexShader,
           CGL.multiColorFragmentShader),
       [perspective]);
 
+  final CGL.Scene sceneBuildingWireframe = CGL.Scene(
+      "objects",
+      CGL.RenderProgram("building", cgl, CGL.wireframeVertexShader,
+          CGL.wireframeFragmentShader),
+      [perspective]);
+
   final CGL.RenderPhaseResizeAware phase =
       CGL.RenderPhaseResizeAware("main", cgl, canvas, perspective)
         ..add(sceneTorus)
-        ..add(sceneBuilding);
+        ..add(sceneBuildingNight)
+        ..add(sceneBuildingWireframe);
 
   final CGL.GeometryBuilder torus = TorusKnotWithCustumUV();
-  AddBuildings(cgl, sceneBuilding, floorplan, torus, matBuilding);
+  final CGL.GeometryBuilder buildings = MakeBuildings(floorplan, torus);
+
+  sceneBuildingNight.add(CGL.Node(
+      "",
+      CGL.GeometryBuilderToMeshData(
+          "buildings", sceneBuildingNight.program, buildings),
+      matBuilding));
+
+  sceneBuildingWireframe.add(CGL.Node(
+      "",
+      CGL.GeometryBuilderToMeshData(
+          "buildings", sceneBuildingWireframe.program, buildings),
+      matBuilding));
 
   sceneTorus.add(CGL.Node(
       "torus",
@@ -295,6 +317,18 @@ void main() {
     mover.transform.setFrom(tkc.transform);
     //updateTorusTexture(timeMs / 1000, canvas2d);
     perspective.UpdateCamera(gCameraMode.checked ? tkc : oc);
+
+    switch (gTheme.value) {
+      case "wireframe":
+        sceneBuildingWireframe.enabled = true;
+        sceneBuildingNight.enabled = false;
+        break;
+      case "night":
+      default:
+        sceneBuildingWireframe.enabled = false;
+        sceneBuildingNight.enabled = true;
+        break;
+    }
     phase.Draw();
     HTML.window.animationFrame.then(animate);
     fps.UpdateFrameCount(_lastTimeMs);
