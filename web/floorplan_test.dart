@@ -1,7 +1,7 @@
 
 import 'dart:html' as HTML;
 import 'dart:math' as Math;
-import 'package:vector_math/vector_math.dart' as VM;
+// import 'package:vector_math/vector_math.dart' as VM;
 
 import 'floorplan.dart' as FLOORPLAN;
 

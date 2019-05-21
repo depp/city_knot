@@ -18,18 +18,18 @@ final int kHeight = 2400 * magicMult;
 const double kBuildingDim = 20;
 
 final HTML.InputElement gCameraMode =
-HTML.document.querySelector('#toruscam') as HTML.InputElement;
+    HTML.document.querySelector('#toruscam') as HTML.InputElement;
 
 final HTML.SelectElement gCameraRoute =
-HTML.document.querySelector('#routecam') as HTML.SelectElement;
+    HTML.document.querySelector('#routecam') as HTML.SelectElement;
 
 final HTML.SelectElement gTheme =
-HTML.document.querySelector('#theme') as HTML.SelectElement;
+    HTML.document.querySelector('#theme') as HTML.SelectElement;
 
 final HTML.Element gClock = HTML.document.querySelector('#clock');
 
-void buildPlaneVectors(final VM.Vector3 planeNormal, VM.Vector3 u,
-    VM.Vector3 v) {
+void buildPlaneVectors(
+    final VM.Vector3 planeNormal, VM.Vector3 u, VM.Vector3 v) {
   final double a =
       planeNormal.x * planeNormal.x + planeNormal.y * planeNormal.y;
   final double k = 1.0 / Math.sqrt(a);
@@ -63,10 +63,11 @@ VM.Vector3 getRoute(VM.Vector3 v1, VM.Vector3 v2) {
 
 // Camera flying through a TorusKnot like through a tunnel
 class TorusKnotCamera extends CGL.Spatial {
-  TorusKnotCamera({this.radius = kRadius,
-    this.p = 2,
-    this.q = 3,
-    this.heightScale = kHeightScale})
+  TorusKnotCamera(
+      {this.radius = kRadius,
+      this.p = 2,
+      this.q = 3,
+      this.heightScale = kHeightScale})
       : super("camera:torusknot");
 
   final double radius;
@@ -111,8 +112,8 @@ class TorusKnotCamera extends CGL.Spatial {
   }
 }
 
-CGL.Scene MakeStarScene(CGL.ChronosGL cgl, CGL.UniformGroup perspective,
-    int num) {
+CGL.Scene MakeStarScene(
+    CGL.ChronosGL cgl, CGL.UniformGroup perspective, int num) {
   CGL.Scene scene = CGL.Scene(
       "stars",
       CGL.RenderProgram("stars", cgl, CGL.pointSpritesVertexShader,
@@ -120,6 +121,73 @@ CGL.Scene MakeStarScene(CGL.ChronosGL cgl, CGL.UniformGroup perspective,
       [perspective]);
   scene.add(CGL.Utils.MakeParticles(scene.program, num));
   return scene;
+}
+
+/// Like ShapeTorusKnotGeometry but with duplicate Vertices to make it
+/// possible to add aCenter attributes with GenerateWireframeCenters()
+CGL.GeometryBuilder TorusKnotGeometryTriangularWireframeFriendly(
+    {double radius = 20.0,
+    double tubeRadius = 4.0,
+    int segmentsR = 128,
+    int segmentsT = 16,
+    int p = 2,
+    int q = 3,
+    double heightScale = 1.0,
+    bool inside = false}) {
+  void curveFunc(double u, VM.Vector3 out) {
+    CGL.TorusKnotGetPos(u, q, p, radius, heightScale, out);
+  }
+
+  final List<VM.Vector3> pointsAndTangents =
+      CGL.ParametricCurvePointsAndTangents(
+          curveFunc, 0.0, 2.0 * Math.pi, segmentsR,
+          halfOpen: true);
+  pointsAndTangents.add(pointsAndTangents[0]);
+  pointsAndTangents.add(pointsAndTangents[1]);
+  final int h = segmentsR + 1;
+  assert(pointsAndTangents.length == 2 * h);
+  final List<List<VM.Vector3>> bands =
+      CGL.TubeHullBands(pointsAndTangents, segmentsT, tubeRadius);
+  for (List<VM.Vector3> b in bands) {
+    b.add(b[0]);
+    b.add(b[1]);
+  }
+  assert(bands.length == h);
+
+  final CGL.GeometryBuilder gb = CGL.GeometryBuilder();
+
+  for (int i = 0; i < segmentsR; ++i) {
+    for (int j = 0; j < segmentsT; j += 2) {
+      final int ip = (i + 1) % segmentsR;
+      final int jp = j + i % 2;
+      gb.AddFaces3(2);
+      if (inside) {
+        gb.AddVerticesTakeOwnership([
+          bands[i][jp * 2],
+          bands[ip][((jp + 1) % segmentsT) * 2],
+          bands[i][((jp + 2) % segmentsT) * 2]
+        ]);
+        gb.AddVerticesTakeOwnership([
+          bands[ip][((jp + 1) % segmentsT) * 2],
+          bands[i][((jp + 2) % segmentsT) * 2],
+          bands[ip][((jp + 3) % segmentsT) * 2],
+        ]);
+      } else {
+        gb.AddVerticesTakeOwnership([
+          bands[i][jp * 2],
+          bands[ip][((jp + 1) % segmentsT) * 2],
+          bands[i][((jp + 2) % segmentsT) * 2]
+        ]);
+        gb.AddVerticesTakeOwnership([
+          bands[ip][((jp + 1) % segmentsT) * 2],
+          bands[i][((jp + 2) % segmentsT) * 2],
+          bands[ip][((jp + 3) % segmentsT) * 2],
+        ]);
+      }
+    }
+  }
+
+  return gb;
 }
 
 CGL.GeometryBuilder TorusKnot(int segmentsR, int segmentsT) {
@@ -141,6 +209,7 @@ CGL.GeometryBuilder TorusKnot(int segmentsR, int segmentsT) {
 
 CGL.GeometryBuilder TorusKnotWireframe(int segmentsR, int segmentsT) {
   LogInfo("start torus gb ${kWidth}x${kHeight}");
+
   final CGL.GeometryBuilder gb = CGL.TorusKnotGeometryWireframeFriendly(
       heightScale: kHeightScale,
       radius: kRadius,
@@ -150,6 +219,17 @@ CGL.GeometryBuilder TorusKnotWireframe(int segmentsR, int segmentsT) {
       computeUVs: false,
       computeNormals: false,
       inside: true);
+
+  /*
+  final CGL.GeometryBuilder gb = TorusKnotGeometryTriangularWireframeFriendly(
+      heightScale: kHeightScale,
+      radius: kRadius,
+      tubeRadius: kTubeRadius,
+      segmentsR: segmentsR,
+      segmentsT: segmentsT,
+      inside: true);
+*/
+
   gb.GenerateWireframeCenters();
   //assert(gb.vertices.length == w * h);
   LogInfo("done torus-wireframe gb ${gb}");
@@ -177,7 +257,7 @@ CGL.Texture MakeFloorplanTexture(CGL.ChronosGL cgl, Floorplan floorplan) {
   LogInfo("make floorplan");
 
   HTML.CanvasElement canvas =
-  RenderCanvasWorldMap(floorplan.world_map, kTileToColorsStandard);
+      RenderCanvasWorldMap(floorplan.world_map, kTileToColorsStandard);
   //dynamic ctx = canvas.getContext("2d");
   // ctx.fillText("Hello World", 10, 50);
   // CGL.TextureProperties tp = CGL.TextureProperties()..flipY;
@@ -188,13 +268,7 @@ CGL.Texture MakeFloorplanTexture(CGL.ChronosGL cgl, Floorplan floorplan) {
 
 CGL.GeometryBuilder MakeOneBuilding(double dx, double dy, double dz) {
   CGL.GeometryBuilder gb = CGL.CubeGeometry(
-      x: dx,
-      y: dy,
-      z: dz,
-      uMin: 0.0,
-      uMax: 1.0,
-      vMin: 0.0,
-      vMax: 1.0);
+      x: dx, y: dy, z: dz, uMin: 0.0, uMax: 1.0, vMin: 0.0, vMax: 1.0);
   gb.EnableAttribute(CGL.aColor);
   final List<VM.Vector3> colors = [];
   VM.Vector3 c = VM.Vector3.random();
@@ -212,11 +286,9 @@ CGL.GeometryBuilder MakeOneBuilding(double dx, double dy, double dz) {
   return gb;
 }
 
-CGL.GeometryBuilder MakeBuildings(Floorplan floorplan,
-    CGL.GeometryBuilder torus) {
-  print("building statr ${floorplan
-      .GetBuildings()
-      .length}");
+CGL.GeometryBuilder MakeBuildings(
+    Floorplan floorplan, CGL.GeometryBuilder torus) {
+  print("building statr ${floorplan.GetBuildings().length}");
 
   VM.Vector3 GetVertex(int x, int y) {
     return torus.vertices[x + y * (kWidth + 1)];
@@ -240,8 +312,7 @@ CGL.GeometryBuilder MakeBuildings(Floorplan floorplan,
     final CGL.GeometryBuilder gb = MakeOneBuilding(h + 0.0, w + 0.0, b.height);
     VM.Vector3 dir1 = centerW - center;
     VM.Vector3 dir2 = centerH - center;
-    VM.Vector3 dir3 = dir1.cross(dir2)
-      ..normalize();
+    VM.Vector3 dir3 = dir1.cross(dir2)..normalize();
     VM.Vector3 pos = center + dir3.scaled(b.height);
     //node.setPosFromVec(pos);
 
@@ -259,7 +330,7 @@ CGL.GeometryBuilder MakeBuildings(Floorplan floorplan,
 
 void main() {
   CGL.StatsFps fps =
-  CGL.StatsFps(HTML.document.getElementById("stats"), "blue", "gray");
+      CGL.StatsFps(HTML.document.getElementById("stats"), "blue", "gray");
 
   HTML.CanvasElement canvas = HTML.document.querySelector('#webgl-canvas');
   CGL.ChronosGL cgl = CGL.ChronosGL(canvas);
@@ -275,20 +346,19 @@ void main() {
   final Floorplan floorplan = Floorplan(kHeight, kWidth, 10, rng);
 
   final CGL.Material mat = CGL.Material("center")
-    ..SetUniform(
-        CGL.uTexture, MakeFloorplanTexture(cgl, floorplan))..SetUniform(
-        CGL.uColor, VM.Vector3.zero());
+    ..SetUniform(CGL.uTexture, MakeFloorplanTexture(cgl, floorplan))
+    ..SetUniform(CGL.uColor, VM.Vector3.zero());
 
   final CGL.Material matBuilding = CGL.Material("center")
-    ..SetUniform(CGL.uColor, VM.Vector3(1.0, 1.0, 0.0))..SetUniform(
-        CGL.uColorAlpha, VM.Vector4(1.0, 0.0, 0.0, 1.0))..SetUniform(
-        CGL.uColorAlpha2, VM.Vector4(0.1, 0.0, 0.0, 1.0));
+    ..SetUniform(CGL.uColor, VM.Vector3(1.0, 1.0, 0.0))
+    ..SetUniform(CGL.uColorAlpha, VM.Vector4(1.0, 0.0, 0.0, 1.0))
+    ..SetUniform(CGL.uColorAlpha2, VM.Vector4(0.1, 0.0, 0.0, 1.0));
 
   final CGL.Material matTorusknotWireframe = CGL.Material("center")
     ..ForceUniform(CGL.cBlendEquation, CGL.BlendEquationStandard)
-    ..SetUniform(CGL.uColor, VM.Vector3(1.0, 1.0, 0.0))..SetUniform(
-        CGL.uColorAlpha, VM.Vector4(0.0, 0.0, 1.0, 0.5))..SetUniform(
-        CGL.uColorAlpha2, VM.Vector4(0.0, 0.0, 0.1, 0.0));
+    ..SetUniform(CGL.uColor, VM.Vector3(1.0, 1.0, 0.0))
+    ..SetUniform(CGL.uColorAlpha, VM.Vector4(0.0, 0.0, 1.0, 1.0))
+    ..SetUniform(CGL.uColorAlpha2, VM.Vector4(0.0, 0.0, 0.1, 0.1));
 
   final CGL.Scene sceneTorus = CGL.Scene(
       "objects",
@@ -309,8 +379,10 @@ void main() {
       [perspective]);
 
   final CGL.RenderPhaseResizeAware phase =
-  CGL.RenderPhaseResizeAware("main", cgl, canvas, perspective)
-    ..add(sceneTorus)..add(sceneBuildingNight)..add(sceneBuildingWireframe);
+      CGL.RenderPhaseResizeAware("main", cgl, canvas, perspective)
+        ..add(sceneTorus)
+        ..add(sceneBuildingNight)
+        ..add(sceneBuildingWireframe);
 
   final CGL.GeometryBuilder torus = TorusKnot(kHeight, kWidth);
   final CGL.GeometryBuilder buildings = MakeBuildings(floorplan, torus);
@@ -329,16 +401,14 @@ void main() {
       matBuilding);
   sceneBuildingWireframe.add(buildingsWireframe);
 
-
   final CGL.GeometryBuilder torusWF =
-  TorusKnotWireframe(kHeight ~/ 4, kWidth ~/ 4);
+      TorusKnotWireframe(kHeight ~/ 4, kWidth ~/ 4);
   final tkWireframe = CGL.Node(
       "wireframe KN",
       CGL.GeometryBuilderToMeshData(
           "buildings", sceneBuildingWireframe.program, torusWF),
       matTorusknotWireframe);
   sceneBuildingWireframe.add(tkWireframe);
-
 
   final tkStreet = CGL.Node(
       "torus",
@@ -393,6 +463,9 @@ void main() {
 
         break;
     }
+    //matTorusknotWireframe.SetUniform(
+    //    CGL.uColorAlpha2, VM.Vector4(0.0, 0.0, 0.1, 0.0));
+
     phase.Draw();
     gClock.text = DurationFormat(timeMs);
     HTML.window.animationFrame.then(animate);
