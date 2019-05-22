@@ -30,6 +30,23 @@ const String uMaxFurnitureH = "uMaxFurnitureH";
 const String uFeatures = "uFeatures";
 const String uWindowFrame = "uWindowFrame";
 const String uRandSeed = "uRandSeed";
+const String uWidth = "uWidth";
+
+void IntroduceShaderVars() {
+  IntroduceNewShaderVar(iaRotatationY,
+      ShaderVarDesc("float", "for cars: rotation around y axis"));
+  IntroduceNewShaderVar(uFogColor, ShaderVarDesc("vec3", ""));
+  IntroduceNewShaderVar(uFogScale, ShaderVarDesc("float", ""));
+  IntroduceNewShaderVar(uFogEnd, ShaderVarDesc("float", ""));
+  IntroduceNewShaderVar(uRandSeed, ShaderVarDesc("float", ""));
+  IntroduceNewShaderVar(uWindowDim, ShaderVarDesc("vec2", ""));
+  IntroduceNewShaderVar(uWindowFrame, ShaderVarDesc("vec3", ""));
+  IntroduceNewShaderVar(uAverageFurnitureW, ShaderVarDesc("float", ""));
+  IntroduceNewShaderVar(uMaxFurnitureH, ShaderVarDesc("float", ""));
+  IntroduceNewShaderVar(uFeatures, ShaderVarDesc("int", ""));
+  IntroduceNewShaderVar(uWidth, ShaderVarDesc("float", ""));
+}
+
 
 final ShaderObject pcPointSpritesVertexShader = ShaderObject("PointSprites")
   ..AddAttributeVars([aPosition, aPointSize, aColor])
@@ -412,7 +429,11 @@ final ShaderObject edgeDetectionFragmentShader = ShaderObject("edgeDetectionF")
 //
 
 final ShaderObject sketchPrepVertexShader = ShaderObject("preparationV")
-  ..AddAttributeVars([aPosition, aNormal, aTexUV]) // added aTexUV for compatibility with final shader
+  ..AddAttributeVars([
+    aPosition,
+    aNormal,
+    aTexUV
+  ]) // added aTexUV for compatibility with final shader
   ..AddVaryingVars([vNormal])
   ..AddUniformVars([uPerspectiveViewMatrix, uModelMatrix])
   ..SetBody([
@@ -518,3 +539,48 @@ final ShaderObject sketchFragmentShader = ShaderObject("finalF")
   ], prolog: [
     StdLibShader
   ]);
+
+const String _WireframeF = """
+// the 3 vertices of a Face3 (w == 0) have the centers:
+// (1, 0, 0, 0)) 
+// (0, 1, 0, 0)
+// (0, 0, 1, 0)
+float edgeFactorFace3(vec3 center) {
+    vec3 d = fwidth(center);
+    vec3 a3 = smoothstep(vec3(0.0), d * ${uWidth}, center);
+    return min(min(a3.x, a3.y), a3.z);
+}
+
+// the 4 vertices of a Face4 (w == 1) have the centers:
+// (1, 0, 0, 1) 
+// (1, 1, 0, 1)
+// (0, 1, 0, 1)
+// (0, 0, 0, 1)
+float edgeFactorFace4(vec2 center) {
+    vec2 d = fwidth(center);
+    vec2 a2 = smoothstep(vec2(0.0), d * ${uWidth}, center);
+    return min(a2.x, a2.y);
+}
+
+void main() {
+    float q;
+    if (${vCenter}.w == 0.0) {
+        q = edgeFactorFace3(${vCenter}.xyz);
+    } else {
+        q = min(edgeFactorFace4(${vCenter}.xy),
+                edgeFactorFace4(1.0 - ${vCenter}.xy));
+    }
+    ${oFragColor} = mix(${uColorAlpha}, ${uColorAlpha2}, q);
+}
+""";
+
+final ShaderObject wireframeVertexShader = ShaderObject("WireframeV")
+  ..AddAttributeVars([aPosition, aCenter])
+  ..AddVaryingVars([vCenter])
+  ..AddUniformVars([uPerspectiveViewMatrix, uModelMatrix])
+  ..SetBodyWithMain([StdVertexBody, "${vCenter} = ${aCenter};"]);
+
+final ShaderObject wireframeFragmentShader = ShaderObject("WireframeF")
+  ..AddVaryingVars([vCenter])
+  ..AddUniformVars([uColorAlpha, uColorAlpha2, uWidth])
+  ..SetBody([_WireframeF]);

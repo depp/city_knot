@@ -6,6 +6,7 @@ import 'package:vector_math/vector_math.dart' as VM;
 
 import 'floorplan.dart';
 import 'logging.dart';
+import 'shaders.dart';
 
 VM.Vector3 p1 = VM.Vector3.zero();
 
@@ -190,6 +191,33 @@ CGL.GeometryBuilder TorusKnotGeometryTriangularWireframeFriendly(
   return gb;
 }
 
+void MyGenerateWireframeCenters(CGL.GeometryBuilder gb) {
+  List<VM.Vector4> center = List<VM.Vector4>(gb.vertices.length);
+
+  VM.Vector4 a3 = VM.Vector4(1.0, 0.0, 0.0, 0.0);
+  VM.Vector4 b3 = VM.Vector4(0.0, 1.0, 0.0, 0.0);
+  VM.Vector4 c3 = VM.Vector4(0.0, 0.0, 1.0, 0.0);
+
+  for (CGL.Face3 f in gb.faces3) {
+    center[f.a] = a3.clone();
+    center[f.b] = b3.clone();
+    center[f.c] = c3.clone();
+  }
+
+  VM.Vector4 a4 = VM.Vector4(1.0, 0.0, 0.0, 1.0);
+  VM.Vector4 b4 = VM.Vector4(1.0, 1.0, 0.0, 1.0);
+  VM.Vector4 c4 = VM.Vector4(0.0, 1.0, 0.0, 1.0);
+  VM.Vector4 d4 = VM.Vector4(0.0, 0.0, 0.0, 1.0);
+
+  for (CGL.Face4 f in gb.faces4) {
+    center[f.a] = a4.clone();
+    center[f.b] = b4.clone();
+    center[f.c] = c4.clone();
+    center[f.d] = d4.clone();
+  }
+  gb.attributes[CGL.aCenter] = center;
+}
+
 CGL.GeometryBuilder TorusKnot(int segmentsR, int segmentsT) {
   LogInfo("start torus gb ${kWidth}x${kHeight}");
   final CGL.GeometryBuilder gb = CGL.TorusKnotGeometry(
@@ -220,7 +248,16 @@ CGL.GeometryBuilder TorusKnotWireframe(int segmentsR, int segmentsT) {
       computeNormals: false,
       inside: true);
 
-  /*
+  gb.GenerateWireframeCenters();
+  //assert(gb.vertices.length == w * h);
+  LogInfo("done torus-wireframe gb ${gb}");
+
+  return gb;
+}
+
+CGL.GeometryBuilder TorusKnotWireframeHexagons(int segmentsR, int segmentsT) {
+  LogInfo("start torus gb ${kWidth}x${kHeight}");
+
   final CGL.GeometryBuilder gb = TorusKnotGeometryTriangularWireframeFriendly(
       heightScale: kHeightScale,
       radius: kRadius,
@@ -228,9 +265,8 @@ CGL.GeometryBuilder TorusKnotWireframe(int segmentsR, int segmentsT) {
       segmentsR: segmentsR,
       segmentsT: segmentsT,
       inside: true);
-*/
 
-  gb.GenerateWireframeCenters();
+  MyGenerateWireframeCenters(gb);
   //assert(gb.vertices.length == w * h);
   LogInfo("done torus-wireframe gb ${gb}");
 
@@ -332,6 +368,7 @@ void main() {
   CGL.StatsFps fps =
       CGL.StatsFps(HTML.document.getElementById("stats"), "blue", "gray");
 
+  IntroduceShaderVars();
   HTML.CanvasElement canvas = HTML.document.querySelector('#webgl-canvas');
   CGL.ChronosGL cgl = CGL.ChronosGL(canvas);
   cgl.enable(CGL.GL_CULL_FACE);
@@ -349,12 +386,14 @@ void main() {
     ..SetUniform(CGL.uTexture, MakeFloorplanTexture(cgl, floorplan))
     ..SetUniform(CGL.uColor, VM.Vector3.zero());
 
-  final CGL.Material matBuilding = CGL.Material("center")
+  final CGL.Material matBuilding = CGL.Material("building")
+    ..SetUniform(uWidth, 1.5)
     ..SetUniform(CGL.uColor, VM.Vector3(1.0, 1.0, 0.0))
     ..SetUniform(CGL.uColorAlpha, VM.Vector4(1.0, 0.0, 0.0, 1.0))
     ..SetUniform(CGL.uColorAlpha2, VM.Vector4(0.1, 0.0, 0.0, 1.0));
 
-  final CGL.Material matTorusknotWireframe = CGL.Material("center")
+  final CGL.Material matTorusknotWireframe = CGL.Material("tkWF")
+    ..SetUniform(uWidth, 1.5)
     ..ForceUniform(CGL.cBlendEquation, CGL.BlendEquationStandard)
     ..SetUniform(CGL.uColor, VM.Vector3(1.0, 1.0, 0.0))
     ..SetUniform(CGL.uColorAlpha, VM.Vector4(0.0, 0.0, 1.0, 1.0))
@@ -374,8 +413,8 @@ void main() {
 
   final CGL.Scene sceneBuildingWireframe = CGL.Scene(
       "objects",
-      CGL.RenderProgram("building", cgl, CGL.wireframeVertexShader,
-          CGL.wireframeFragmentShader),
+      CGL.RenderProgram(
+          "building", cgl, wireframeVertexShader, wireframeFragmentShader),
       [perspective]);
 
   final CGL.RenderPhaseResizeAware phase =
@@ -402,7 +441,7 @@ void main() {
   sceneBuildingWireframe.add(buildingsWireframe);
 
   final CGL.GeometryBuilder torusWF =
-      TorusKnotWireframe(kHeight ~/ 4, kWidth ~/ 4);
+      TorusKnotWireframe(kHeight ~/ 8, kWidth ~/ 8);
   final tkWireframe = CGL.Node(
       "wireframe KN",
       CGL.GeometryBuilderToMeshData(
@@ -444,6 +483,7 @@ void main() {
 
         break;
       case "wireframe-inside":
+      case "wireframe-inside-varying-width":
         buildingsWireframe.enabled = true;
         buildingsNight.enabled = false;
         tkStreet.enabled = false;
@@ -463,9 +503,14 @@ void main() {
 
         break;
     }
-    //matTorusknotWireframe.SetUniform(
-    //    CGL.uColorAlpha2, VM.Vector4(0.0, 0.0, 0.1, 0.0));
 
+    if (gTheme.value == "wireframe-inside-varying-width") {
+      double alpha = Math.sin(timeMs / 2000.0) * 50.0 + 52.0;
+      matTorusknotWireframe.ForceUniform(uWidth, alpha);
+    } else {
+      matTorusknotWireframe.ForceUniform(uWidth, 1.5);
+      //matBuilding.ForceUniform(uWidth, alpha);
+    }
     phase.Draw();
     gClock.text = DurationFormat(timeMs);
     HTML.window.animationFrame.then(animate);
