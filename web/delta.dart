@@ -375,13 +375,15 @@ void main() {
   final TorusKnotCamera tkc = TorusKnotCamera();
   final CGL.OrbitCamera oc = CGL.OrbitCamera(kRadius * 3.5, 0.0, 0.0, canvas)
     ..mouseWheelFactor = -0.2;
-  final CGL.Perspective perspective = CGL.Perspective(tkc, 0.1, 20000.0);
+  final CGL.Perspective perspective =
+      CGL.PerspectiveResizeAware(cgl, canvas, tkc, 0.1, 20000.0);
   perspective.UpdateFov(60.0);
 
   final Math.Random rng = Math.Random(0);
 
   final Floorplan floorplan = Floorplan(kHeight, kWidth, 10, rng);
 
+  // Material
   final CGL.Material mat = CGL.Material("center")
     ..SetUniform(CGL.uTexture, MakeFloorplanTexture(cgl, floorplan))
     ..SetUniform(CGL.uColor, VM.Vector3.zero());
@@ -399,64 +401,36 @@ void main() {
     ..SetUniform(CGL.uColorAlpha, VM.Vector4(0.0, 0.0, 1.0, 1.0))
     ..SetUniform(CGL.uColorAlpha2, VM.Vector4(0.0, 0.0, 0.1, 0.1));
 
-  final CGL.Scene sceneTorus = CGL.Scene(
-      "objects",
-      CGL.RenderProgram(
-          "torus", cgl, CGL.texturedVertexShader, CGL.texturedFragmentShader),
-      [perspective]);
+  final dummyMat = CGL.Material("")
+    ..SetUniform(CGL.uModelMatrix, VM.Matrix4.identity());
 
-  final CGL.Scene sceneBuildingNight = CGL.Scene(
-      "objects",
-      CGL.RenderProgram("building", cgl, CGL.multiColorVertexShader,
-          CGL.multiColorFragmentShader),
-      [perspective]);
+  // prog
+  final CGL.RenderProgram torusProg = CGL.RenderProgram(
+      "torus", cgl, CGL.texturedVertexShader, CGL.texturedFragmentShader);
 
-  final CGL.Scene sceneBuildingWireframe = CGL.Scene(
-      "objects",
-      CGL.RenderProgram(
-          "building", cgl, wireframeVertexShader, wireframeFragmentShader),
-      [perspective]);
+  final progMulticolor = CGL.RenderProgram("building", cgl,
+      CGL.multiColorVertexShader, CGL.multiColorFragmentShader);
 
-  final CGL.RenderPhaseResizeAware phase =
-      CGL.RenderPhaseResizeAware("main", cgl, canvas, perspective)
-        ..add(sceneTorus)
-        ..add(sceneBuildingNight)
-        ..add(sceneBuildingWireframe);
+  final wireframeProg = CGL.RenderProgram(
+      "building", cgl, wireframeVertexShader, wireframeFragmentShader);
 
   final CGL.GeometryBuilder torus = TorusKnot(kHeight, kWidth);
   final CGL.GeometryBuilder buildings = MakeBuildings(floorplan, torus);
 
-  final CGL.Node buildingsNight = CGL.Node(
-      "",
-      CGL.GeometryBuilderToMeshData(
-          "buildings", sceneBuildingNight.program, buildings),
-      matBuilding);
-  sceneBuildingNight.add(buildingsNight);
+  // meshes
 
-  final CGL.Node buildingsWireframe = CGL.Node(
-      "wireframe-buildings",
-      CGL.GeometryBuilderToMeshData(
-          "buildings", sceneBuildingWireframe.program, buildings),
-      matBuilding);
-  sceneBuildingWireframe.add(buildingsWireframe);
+  final buildingsNight =
+      CGL.GeometryBuilderToMeshData("buildings", progMulticolor, buildings);
+
+  final buildingsWireframe =
+      CGL.GeometryBuilderToMeshData("buildings", wireframeProg, buildings);
 
   final CGL.GeometryBuilder torusWF =
       TorusKnotWireframe(kHeight ~/ 8, kWidth ~/ 8);
-  final tkWireframe = CGL.Node(
-      "wireframe KN",
-      CGL.GeometryBuilderToMeshData(
-          "buildings", sceneBuildingWireframe.program, torusWF),
-      matTorusknotWireframe);
-  sceneBuildingWireframe.add(tkWireframe);
+  final tkWireframe =
+      CGL.GeometryBuilderToMeshData("buildings", wireframeProg, torusWF);
 
-  final tkStreet = CGL.Node(
-      "torus",
-      CGL.GeometryBuilderToMeshData("torusknot", sceneTorus.program, torus),
-      mat);
-  sceneTorus.add(tkStreet);
-
-  CGL.Node mover = CGL.Node("moving-ball", Sphere(sceneTorus.program, 25), mat);
-  sceneTorus.add(mover);
+  final tkStreet = CGL.GeometryBuilderToMeshData("torusknot", torusProg, torus);
 
   double _lastTimeMs = 0.0;
   void animate(num timeMs) {
@@ -468,41 +442,17 @@ void main() {
     oc.animate(elapsed);
 
     tkc.animate(_lastTimeMs * 0.5);
-    mover.transform.setFrom(tkc.transform);
     //updateTorusTexture(timeMs / 1000, canvas2d);
     perspective.UpdateCamera(gCameraMode.checked ? tkc : oc);
-
-    switch (gTheme.value) {
-      case "wireframe-outside":
-        buildingsWireframe.enabled = true;
-        buildingsNight.enabled = false;
-        tkStreet.enabled = true;
-        tkWireframe.enabled = false;
-
-        tkc.SetTubeRadius(kTubeRadius + 50.0);
-
-        break;
-      case "wireframe-inside":
-      case "wireframe-inside-varying-width":
-        buildingsWireframe.enabled = true;
-        buildingsNight.enabled = false;
-        tkStreet.enabled = false;
-        tkWireframe.enabled = true;
-
-        tkc.SetTubeRadius(1.0);
-
-        break;
-      case "night-outside":
-      default:
-        buildingsWireframe.enabled = false;
-        buildingsNight.enabled = true;
-        tkStreet.enabled = true;
-        tkWireframe.enabled = false;
-
-        tkc.SetTubeRadius(kTubeRadius + 50.0);
-
-        break;
+    if (gTheme.value == "wireframe-inside-varying-width") {
+      double alpha = Math.sin(timeMs / 2000.0) * 50.0 + 52.0;
+      matTorusknotWireframe.ForceUniform(uWidth, alpha);
+    } else {
+      matTorusknotWireframe.ForceUniform(uWidth, 1.5);
+      //matBuilding.ForceUniform(uWidth, alpha);
     }
+
+    tkc.SetTubeRadius(1.0);
 
     if (gTheme.value == "wireframe-inside-varying-width") {
       double alpha = Math.sin(timeMs / 2000.0) * 50.0 + 52.0;
@@ -511,7 +461,30 @@ void main() {
       matTorusknotWireframe.ForceUniform(uWidth, 1.5);
       //matBuilding.ForceUniform(uWidth, alpha);
     }
-    phase.Draw();
+    switch (gTheme.value) {
+      case "wireframe-outside":
+        tkc.SetTubeRadius(kTubeRadius + 50.0);
+        wireframeProg.Draw(
+            buildingsWireframe, [matBuilding, perspective, dummyMat]);
+        torusProg.Draw(tkStreet, [mat, perspective, dummyMat]);
+        break;
+      case "wireframe-inside":
+      case "wireframe-inside-varying-width":
+        wireframeProg.Draw(
+            buildingsWireframe, [perspective, dummyMat, matBuilding]);
+        wireframeProg.Draw(
+            tkWireframe, [perspective, dummyMat, matTorusknotWireframe]);
+        break;
+      case "night-outside":
+      default:
+        tkc.SetTubeRadius(kTubeRadius + 50.0);
+        progMulticolor.Draw(
+            buildingsNight, [matBuilding, perspective, dummyMat]);
+
+        torusProg.Draw(tkStreet, [mat, perspective, dummyMat]);
+        break;
+    }
+
     gClock.text = DurationFormat(timeMs);
     HTML.window.animationFrame.then(animate);
     fps.UpdateFrameCount(_lastTimeMs);
