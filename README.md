@@ -1,7 +1,9 @@
 # Dart Getting Started
 
-
 Note: run `make` without arguments for more info
+
+A recent runnable preview can be found at http://art.muth.org/delta.html
+
 
 ## Setup
 
@@ -43,6 +45,7 @@ The demo consists of a exploring a citiscape wrapped around a torusknot
 
 Target duration: 2-3min
 
+
 ### Script
 
 1. **15 sec** the camera will start far away from the TK and move towards it until it almost touches the surface 
@@ -58,7 +61,7 @@ Target duration: 2-3min
 
 
 
-The are lots of open issue. What should we show
+The are lots of open issue, e.g what should we show:
 
 * in the background (maybe smaller version of TK)
 * for the parts traveling on the surface of the TK (variations of PixelCity scheme would be relatively easy 
@@ -73,4 +76,5 @@ Music is completely open too. Some ideas:
 
 * https://www.youtube.com/watch?v=aoXOdAUD7IM starting at [0:15] it has this interesting helicopter like sound which slowly morphs until [1:20]
 * https://www.youtube.com/watch?v=Fk1z0TfRIR0 starting [1:10] could be the intro
+* https://www.youtube.com/watch?v=jpYNwFGaMik
 * http://www.jamendo.com/de/track/34406/life-s-things (used by demoscene-ish example)
