@@ -1,21 +1,4 @@
-/*
-Copyright Robert Muth <robert@muth.org>
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; version 3
-of the License.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-*/
-
+/// This files contains all the shading code - not all is used.
 library pc_shaders;
 
 import 'package:chronosgl/chronosgl.dart';
@@ -584,3 +567,31 @@ final ShaderObject wireframeFragmentShader = ShaderObject("WireframeF")
   ..AddVaryingVars([vCenter])
   ..AddUniformVars([uColorAlpha, uColorAlpha2, uWidth])
   ..SetBody([_WireframeF]);
+
+final ShaderObject texturedVertexShader = ShaderObject("Textured")
+  ..AddAttributeVars([aPosition, aTexUV])
+  ..AddUniformVars([uPerspectiveViewMatrix, uModelMatrix])
+  ..AddVaryingVars([vTexUV])
+  ..SetBody([StdVertexShaderWithTextureForwardString]);
+
+final ShaderObject texturedFragmentShader = ShaderObject("TexturedF")
+  ..AddVaryingVars([vTexUV])
+  ..AddUniformVars([uColor, uTexture])
+  ..SetBodyWithMain([
+    "${oFragColor} = texture(${uTexture}, ${vTexUV}) + vec4( ${uColor}, 0.0 );"
+  ]);
+
+final ShaderObject multiColorVertexShader = ShaderObject("MultiColorVertexColorV")
+  ..AddAttributeVars([aPosition, aColor])
+  ..AddUniformVars([uPerspectiveViewMatrix, uModelMatrix])
+  ..AddVaryingVars([vColor])
+  ..SetBodyWithMain([
+    StdVertexBody,
+    "${vColor} = ${aColor};",
+  ], prolog: [
+    StdLibShader
+  ]);
+
+final ShaderObject multiColorFragmentShader = ShaderObject("MultiColorVertexColorF")
+  ..AddVaryingVars([vColor])
+  ..SetBodyWithMain(["${oFragColor} = vec4( ${vColor}, 1.0 );"]);
