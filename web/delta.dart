@@ -6,8 +6,8 @@ import 'package:vector_math/vector_math.dart' as VM;
 
 import 'floorplan.dart';
 import 'logging.dart';
-import 'shaders.dart';
 import 'meshes.dart';
+import 'shaders.dart';
 
 VM.Vector3 p1 = VM.Vector3.zero();
 
@@ -21,6 +21,22 @@ final HTML.SelectElement gTheme =
     HTML.document.querySelector('#theme') as HTML.SelectElement;
 
 final HTML.Element gClock = HTML.document.querySelector('#clock');
+
+
+Map<String, String> HashParameters() {
+  final Map<String, String> out = {};
+
+  String hash = HTML.window.location.hash;
+  if (hash == "") return out;
+  for (String p in hash.substring(1).split("&")) {
+    List<String> tv = p.split("=");
+    if (tv.length == 1) {
+      tv.add("");
+    }
+    out[tv[0]] = tv[1];
+  }
+  return out;
+}
 
 void buildPlaneVectors(
     final VM.Vector3 planeNormal, VM.Vector3 u, VM.Vector3 v) {
@@ -106,7 +122,27 @@ class TorusKnotCamera extends CGL.Spatial {
   }
 }
 
+class InitialApproachCamera extends CGL.Spatial {
+  InitialApproachCamera(this._radius) : super("camera:orbit");
 
+  final VM.Vector3 cameraIntroStartPoint = VM.Vector3(60.0, -70.0, 150.0);
+  final VM.Vector3 cameraIntroEndPoint = VM.Vector3.zero();
+  double _radius;
+  double azimuth = 0.0;
+  double polar = 0.0;
+  final VM.Vector3 _lookAtPos = VM.Vector3.zero();
+
+  void animate(double timeMs) {
+    // azimuth += 0.03;
+    azimuth = timeMs * 0.0001;
+    azimuth = azimuth % (2.0 * Math.pi);
+    polar = polar.clamp(-Math.pi / 2 + 0.1, Math.pi / 2 - 0.1);
+    double radius = _radius * 6.0 - timeMs * 0.1;
+    setPosFromSpherical(radius * 2.0, azimuth, polar);
+    addPosFromVec(_lookAtPos);
+    lookAt(_lookAtPos);
+  }
+}
 
 CGL.Texture MakeFloorplanTexture(CGL.ChronosGL cgl, Floorplan floorplan) {
   LogInfo("make floorplan");
@@ -122,19 +158,23 @@ CGL.Texture MakeFloorplanTexture(CGL.ChronosGL cgl, Floorplan floorplan) {
 }
 
 void main() {
-  CGL.StatsFps fps =
+  final CGL.StatsFps fps =
       CGL.StatsFps(HTML.document.getElementById("stats"), "blue", "gray");
+  final params = HashParameters();
+  LogInfo("Params: ${params}");
 
   IntroduceShaderVars();
-  HTML.CanvasElement canvas = HTML.document.querySelector('#webgl-canvas');
-  CGL.ChronosGL cgl = CGL.ChronosGL(canvas);
-  cgl.enable(CGL.GL_CULL_FACE);
+  final HTML.CanvasElement canvas =
+      HTML.document.querySelector('#webgl-canvas');
+  final CGL.ChronosGL cgl = CGL.ChronosGL(canvas)..enable(CGL.GL_CULL_FACE);
   final TorusKnotCamera tkc = TorusKnotCamera();
-  final CGL.OrbitCamera oc = CGL.OrbitCamera(kRadius * 3.5, 0.0, 0.0, canvas)
+  final CGL.OrbitCamera oc = CGL.OrbitCamera(kRadius * 1.5, 0.0, 0.0, canvas)
     ..mouseWheelFactor = -0.2;
+  final InitialApproachCamera iac = InitialApproachCamera(kRadius);
+
   final CGL.Perspective perspective =
-      CGL.PerspectiveResizeAware(cgl, canvas, tkc, 0.1, 20000.0);
-  perspective.UpdateFov(60.0);
+      CGL.PerspectiveResizeAware(cgl, canvas, tkc, 0.1, 20000.0)
+        ..UpdateFov(60.0);
 
   final Math.Random rng = Math.Random(0);
 
@@ -165,8 +205,8 @@ void main() {
   final CGL.RenderProgram torusProg = CGL.RenderProgram(
       "torus", cgl, texturedVertexShader, texturedFragmentShader);
 
-  final progMulticolor = CGL.RenderProgram("building", cgl,
-      multiColorVertexShader, multiColorFragmentShader);
+  final progMulticolor = CGL.RenderProgram(
+      "building", cgl, multiColorVertexShader, multiColorFragmentShader);
 
   final wireframeProg = CGL.RenderProgram(
       "building", cgl, wireframeVertexShader, wireframeFragmentShader);
@@ -193,9 +233,10 @@ void main() {
     double elapsed = timeMs - _lastTimeMs;
     _lastTimeMs = timeMs + 0.0;
     // animate the camera a little
-    // oc.azimuth += 0.003;
+    oc.azimuth += 0.003;
     // allow the camera to also reflect mouse movement.
     oc.animate(elapsed);
+    iac.animate(timeMs);
 
     tkc.animate(_lastTimeMs * 0.5);
     //updateTorusTexture(timeMs / 1000, canvas2d);

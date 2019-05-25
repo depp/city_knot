@@ -12,8 +12,8 @@ const int magicMult = 1;
 const double kRadius = 500.0 * magicMult;
 const double kHeightScale = 1.0;
 const double kTubeRadius = 100.0 * magicMult;
-final int kWidth = 200 * magicMult;
-final int kHeight = 2400 * magicMult;
+const int kWidth = 200 * magicMult;
+const int kHeight = 2400 * magicMult;
 const double kBuildingDim = 20;
 
 /// Like ShapeTorusKnotGeometry but with duplicate Vertices to make it

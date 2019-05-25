@@ -6,12 +6,7 @@
 
 <body marginheight="0" marginwidth="0" bgcolor="black" id="body">
 <div style="position: absolute; color: white">
-    <div id="stats"></div>
-
-    <tt id="clock"></tt>
-
     <input type="checkbox" id="toruscam" checked>Torus Camera
-
 
     <select id="routecam">
         <option selected>0</option>
@@ -25,10 +20,15 @@
         <option>wireframe-outside</option>
         <option>wireframe-inside</option>
         <option>wireframe-inside-varying-width</option>
-
     </select>Theme
 
+    <tt id="clock"></tt>
 </div>
+
+<div style="position: absolute; color: white; top:0; right:0">
+    <div id="stats"></div>
+</div>
+
 <canvas id="webgl-canvas" style="border: none; cursor:crosshair; width:100%; height: 100%"></canvas>
 <script defer src="delta.dart.js"></script>
 
