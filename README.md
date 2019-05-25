@@ -7,6 +7,20 @@ A recent runnable preview can be found at http://art.muth.org/delta.html
 
 ## Setup
 
+
+### git issues
+
+This repo recursively includes the `mondrianjs` repo . After the initial cloning run
+
+
+`git submodule update --init`
+
+
+to populate the `mondrianjs/` subdir.
+If that does not work because of
+permission/authorization problems try to patch `.git/config` so that 
+all url line start with `url = https://USERNAME@github.com/net...`
+
 ### Install SDK
 
 Ubuntu: package `dart``
