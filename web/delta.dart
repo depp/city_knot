@@ -7,6 +7,7 @@ import 'package:vector_math/vector_math.dart' as VM;
 import 'floorplan.dart';
 import 'logging.dart';
 import 'meshes.dart';
+import 'mondrianjs.dart';
 import 'shaders.dart';
 
 VM.Vector3 p1 = VM.Vector3.zero();
@@ -21,7 +22,6 @@ final HTML.SelectElement gTheme =
     HTML.document.querySelector('#theme') as HTML.SelectElement;
 
 final HTML.Element gClock = HTML.document.querySelector('#clock');
-
 
 Map<String, String> HashParameters() {
   final Map<String, String> out = {};
@@ -286,6 +286,13 @@ void main() {
     HTML.window.animationFrame.then(animate);
     fps.UpdateFrameCount(_lastTimeMs);
   }
+
+  HTML.document.querySelector('#music').onClick.listen((HTML.Event ev) {
+    ev.preventDefault();
+    ev.stopPropagation();
+    playSong();
+    return false;
+  });
 
   animate(0.0);
 }
