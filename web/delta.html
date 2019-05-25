@@ -7,7 +7,6 @@
     <script src="fm_synth.js"></script>
     <script src="synths.js"></script>
     <script src="sequencer.js"></script>
-    <script src="mondrian.js"></script>
     <script src="spanish_romance.js"></script>
     <script type="text/javascript">
     var context;
@@ -49,7 +48,7 @@
 
 <body marginheight="0" marginwidth="0" bgcolor="black" id="body">
 <div style="position: absolute; color: white">
-    <input type="checkbox" id="toruscam" checked>Torus Camera
+    <input type="checkbox" id="manualcam">Manual Camera
 
     <select id="routecam">
         <option selected>0</option>
@@ -63,6 +62,8 @@
         <option>wireframe-outside</option>
         <option>wireframe-inside</option>
         <option>wireframe-inside-varying-width</option>
+        <option>wireframe-orbit-far</option>
+        <option>night-orbit-near</option>
     </select>Theme
 
     <button id="music">Play Music</button>

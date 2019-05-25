@@ -3,7 +3,7 @@
 Note: run `make` without arguments for more info
 
 A recent runnable preview can be found at http://art.muth.org/delta.html
-
+(This is a simplified version to keep load times short).
 
 ## Setup
 
@@ -58,7 +58,6 @@ Go to http://0.0.0.0:8080/build/delta.html
 The demo consists of a exploring a citiscape wrapped around a torusknot 
 
 Target duration: 2-3min
-
 
 ### Script
 

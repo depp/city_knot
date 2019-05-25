@@ -12,8 +12,8 @@ import 'shaders.dart';
 
 VM.Vector3 p1 = VM.Vector3.zero();
 
-final HTML.InputElement gCameraMode =
-    HTML.document.querySelector('#toruscam') as HTML.InputElement;
+final HTML.InputElement gManualCamera =
+    HTML.document.querySelector('#manualcam') as HTML.InputElement;
 
 final HTML.SelectElement gCameraRoute =
     HTML.document.querySelector('#routecam') as HTML.SelectElement;
@@ -93,7 +93,7 @@ class TorusKnotCamera extends CGL.Spatial {
   final VM.Vector3 tangent = VM.Vector3.zero();
 
   void animate(double timeMs) {
-    double u = timeMs / 3000;
+    double u = timeMs / 6000;
     CGL.TorusKnotGetPos(u, q, p, radius, heightScale, point);
     //p1.scale((p1.length + kTubeRadius * 1.1) / p1.length);
 
@@ -123,11 +123,11 @@ class TorusKnotCamera extends CGL.Spatial {
 }
 
 class InitialApproachCamera extends CGL.Spatial {
-  InitialApproachCamera(this._radius) : super("camera:orbit");
+  InitialApproachCamera() : super("camera:orbit");
 
   final VM.Vector3 cameraIntroStartPoint = VM.Vector3(60.0, -70.0, 150.0);
   final VM.Vector3 cameraIntroEndPoint = VM.Vector3.zero();
-  double _radius;
+  double radius = 1.0;
   double azimuth = 0.0;
   double polar = 0.0;
   final VM.Vector3 _lookAtPos = VM.Vector3.zero();
@@ -137,8 +137,8 @@ class InitialApproachCamera extends CGL.Spatial {
     azimuth = timeMs * 0.0001;
     azimuth = azimuth % (2.0 * Math.pi);
     polar = polar.clamp(-Math.pi / 2 + 0.1, Math.pi / 2 - 0.1);
-    double radius = _radius * 6.0 - timeMs * 0.1;
-    setPosFromSpherical(radius * 2.0, azimuth, polar);
+    double r = radius - timeMs * 0.1;
+    setPosFromSpherical(r * 2.0, azimuth, polar);
     addPosFromVec(_lookAtPos);
     lookAt(_lookAtPos);
   }
@@ -167,11 +167,16 @@ void main() {
   final HTML.CanvasElement canvas =
       HTML.document.querySelector('#webgl-canvas');
   final CGL.ChronosGL cgl = CGL.ChronosGL(canvas)..enable(CGL.GL_CULL_FACE);
+
+  // Cameras
+
   final TorusKnotCamera tkc = TorusKnotCamera();
   final CGL.OrbitCamera oc = CGL.OrbitCamera(kRadius * 1.5, 0.0, 0.0, canvas)
     ..mouseWheelFactor = -0.2;
-  final InitialApproachCamera iac = InitialApproachCamera(kRadius);
 
+  final InitialApproachCamera iac = InitialApproachCamera();
+
+  // Misc
   final CGL.Perspective perspective =
       CGL.PerspectiveResizeAware(cgl, canvas, tkc, 0.1, 20000.0)
         ..UpdateFov(60.0);
@@ -228,19 +233,44 @@ void main() {
 
   final tkStreet = CGL.GeometryBuilderToMeshData("torusknot", torusProg, torus);
 
-  double _lastTimeMs = 0.0;
-  void animate(num timeMs) {
-    double elapsed = timeMs - _lastTimeMs;
-    _lastTimeMs = timeMs + 0.0;
-    // animate the camera a little
-    oc.azimuth += 0.003;
-    // allow the camera to also reflect mouse movement.
-    oc.animate(elapsed);
-    iac.animate(timeMs);
+  double zeroTimeMs = 0.0;
+  double lastTimeMs = 0.0;
 
-    tkc.animate(_lastTimeMs * 0.5);
+  String lastTheme;
+  void animate(num timeMs) {
+    double elapsed = timeMs - lastTimeMs;
+    lastTimeMs = timeMs + 0.0;
+
+    tkc.animate(lastTimeMs * 0.5);
+
+    if (gTheme.value != lastTheme) {
+      zeroTimeMs = timeMs;
+      iac.azimuth = 0.0;
+      lastTheme = gTheme.value;
+    }
     //updateTorusTexture(timeMs / 1000, canvas2d);
-    perspective.UpdateCamera(gCameraMode.checked ? tkc : oc);
+    if (gManualCamera.checked) {
+      perspective.UpdateCamera(oc);
+      // allow the camera to also reflect mouse movement.
+      oc.animate(elapsed);
+    } else {
+      switch (gTheme.value) {
+        case "wireframe-orbit-far":
+          perspective.UpdateCamera(iac);
+          iac.radius = kRadius * 6.0;
+          break;
+        case "night-orbit-near":
+          perspective.UpdateCamera(iac);
+          iac.radius = kRadius * 3.0;
+          break;
+        default:
+          perspective.UpdateCamera(tkc);
+      }
+      oc.animate(elapsed);
+      iac.animate(timeMs - zeroTimeMs);
+      tkc.animate(timeMs - zeroTimeMs);
+    }
+
     if (gTheme.value == "wireframe-inside-varying-width") {
       double alpha = Math.sin(timeMs / 2000.0) * 50.0 + 52.0;
       matTorusknotWireframe.ForceUniform(uWidth, alpha);
@@ -260,6 +290,7 @@ void main() {
     }
     switch (gTheme.value) {
       case "wireframe-outside":
+      case "wireframe-orbit-far":
         tkc.SetTubeRadius(kTubeRadius + 50.0);
         wireframeProg.Draw(
             buildingsWireframe, [matBuilding, perspective, dummyMat]);
@@ -282,9 +313,9 @@ void main() {
         break;
     }
 
-    gClock.text = DurationFormat(timeMs);
+    gClock.text = DurationFormat(timeMs - zeroTimeMs);
     HTML.window.animationFrame.then(animate);
-    fps.UpdateFrameCount(_lastTimeMs);
+    fps.UpdateFrameCount(lastTimeMs);
   }
 
   HTML.document.querySelector('#music').onClick.listen((HTML.Event ev) {
