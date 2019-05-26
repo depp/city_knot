@@ -10,8 +10,6 @@ import 'meshes.dart';
 import 'mondrianjs.dart';
 import 'shaders.dart';
 
-VM.Vector3 p1 = VM.Vector3.zero();
-
 final HTML.InputElement gManualCamera =
     HTML.document.querySelector('#manualcam') as HTML.InputElement;
 
@@ -203,6 +201,9 @@ void main() {
     ..SetUniform(CGL.uColorAlpha, VM.Vector4(0.0, 0.0, 1.0, 1.0))
     ..SetUniform(CGL.uColorAlpha2, VM.Vector4(0.0, 0.0, 0.1, 0.1));
 
+  final CGL.Material matPlasma = CGL.Material("plasma")
+    ..ForceUniform(CGL.cBlendEquation, CGL.BlendEquationStandard);
+
   final dummyMat = CGL.Material("")
     ..SetUniform(CGL.uModelMatrix, VM.Matrix4.identity());
 
@@ -216,27 +217,33 @@ void main() {
   final wireframeProg = CGL.RenderProgram(
       "building", cgl, wireframeVertexShader, wireframeFragmentShader);
 
+  final programPerlin = CGL.RenderProgram(
+      "perlin",
+      cgl,
+      CGL.perlinNoiseVertexShader,
+      CGL.makePerlinNoiseColorFragmentShader(false));
+  //
   final CGL.GeometryBuilder torus = TorusKnot(kHeight, kWidth);
   final CGL.GeometryBuilder buildings = MakeBuildings(floorplan, torus);
+  final CGL.GeometryBuilder torusWF =
+      TorusKnotWireframe(kHeight ~/ 8, kWidth ~/ 8);
+  final torusWFeHex = TorusKnotWireframeHexagons(kHeight ~/ 8, kWidth ~/ 8);
 
   // Meshes
   final buildingsNight =
       CGL.GeometryBuilderToMeshData("buildings", progMulticolor, buildings);
-
   final buildingsWireframe =
-      CGL.GeometryBuilderToMeshData("buildings", wireframeProg, buildings);
-
-  final CGL.GeometryBuilder torusWF =
-      TorusKnotWireframe(kHeight ~/ 8, kWidth ~/ 8);
-  final tkWireframe =
-      CGL.GeometryBuilderToMeshData("buildings", wireframeProg, torusWF);
-
+      CGL.GeometryBuilderToMeshData("buildings-wf", wireframeProg, buildings);
+  final tkWireframe = CGL.GeometryBuilderToMeshData("", wireframeProg, torusWF);
+  final tkWireframeHex =
+      CGL.GeometryBuilderToMeshData("", wireframeProg, torusWFeHex);
   final tkStreet = CGL.GeometryBuilderToMeshData("torusknot", torusProg, torus);
 
   double zeroTimeMs = 0.0;
   double lastTimeMs = 0.0;
 
   String lastTheme;
+
   void animate(num timeMs) {
     double elapsed = timeMs - lastTimeMs;
     lastTimeMs = timeMs + 0.0;
@@ -288,6 +295,9 @@ void main() {
       matTorusknotWireframe.ForceUniform(uWidth, 1.5);
       //matBuilding.ForceUniform(uWidth, alpha);
     }
+
+    matPlasma.ForceUniform(CGL.uTime, (timeMs - zeroTimeMs) / 5000.0);
+
     switch (gTheme.value) {
       case "wireframe-outside":
       case "wireframe-orbit-far":
@@ -295,6 +305,17 @@ void main() {
         wireframeProg.Draw(
             buildingsWireframe, [matBuilding, perspective, dummyMat]);
         torusProg.Draw(tkStreet, [mat, perspective, dummyMat]);
+        break;
+      case "plasma-inside":
+        wireframeProg.Draw(
+            buildingsWireframe, [perspective, dummyMat, matBuilding]);
+        programPerlin.Draw(tkWireframe, [perspective, dummyMat, matPlasma]);
+        break;
+      case "wireframe-inside-hexagon":
+        wireframeProg.Draw(
+            buildingsWireframe, [perspective, dummyMat, matBuilding]);
+        wireframeProg.Draw(
+            tkWireframeHex, [perspective, dummyMat, matTorusknotWireframe]);
         break;
       case "wireframe-inside":
       case "wireframe-inside-varying-width":

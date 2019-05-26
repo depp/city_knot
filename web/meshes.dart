@@ -147,6 +147,7 @@ CGL.GeometryBuilder TorusKnotWireframe(int segmentsR, int segmentsT) {
   return gb;
 }
 
+// This does not quite work yet
 CGL.GeometryBuilder TorusKnotWireframeHexagons(int segmentsR, int segmentsT) {
   LogInfo("start torus gb ${kWidth}x${kHeight}");
 
