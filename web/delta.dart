@@ -288,11 +288,12 @@ void main() {
 
     tkc.SetTubeRadius(1.0);
 
-    if (gTheme.value == "wireframe-inside-varying-width") {
-      double alpha = Math.sin(timeMs / 2000.0) * 50.0 + 52.0;
+    if (gTheme.value == "wireframe-inside-varying-width" ||
+        gTheme.value == "wireframe-inside-hexagon") {
+      double alpha = Math.sin(timeMs / 2000.0) * 10.0 + 11.0;
       matTorusknotWireframe.ForceUniform(uWidth, alpha);
     } else {
-      matTorusknotWireframe.ForceUniform(uWidth, 1.5);
+      matTorusknotWireframe.ForceUniform(uWidth, 2.5);
       //matBuilding.ForceUniform(uWidth, alpha);
     }
 

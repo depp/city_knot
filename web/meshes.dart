@@ -12,8 +12,8 @@ const int magicMult = 1;
 const double kRadius = 500.0 * magicMult;
 const double kHeightScale = 1.0;
 const double kTubeRadius = 100.0 * magicMult;
-const int kWidth = 200 * magicMult;
-const int kHeight = 2400 * magicMult;
+const int kWidth = 240 * magicMult;  // divisible by 3 and 8
+const int kHeight = 2400 * magicMult;  // divisible by 3 and 8
 const double kBuildingDim = 20;
 
 /// Like ShapeTorusKnotGeometry but with duplicate Vertices to make it
@@ -51,31 +51,20 @@ CGL.GeometryBuilder TorusKnotGeometryTriangularWireframeFriendly(
 
   for (int i = 0; i < segmentsR; ++i) {
     for (int j = 0; j < segmentsT; j += 2) {
-      final int ip = (i + 1) % segmentsR;
-      final int jp = j + i % 2;
+      final int jp = j + (i % 2) * 3;
       gb.AddFaces3(2);
+      VM.Vector3 b(int x, int y) => bands[x % segmentsR][(y % segmentsT) * 2];
+
       if (inside) {
-        gb.AddVerticesTakeOwnership([
-          bands[i][jp * 2],
-          bands[ip][((jp + 1) % segmentsT) * 2],
-          bands[i][((jp + 2) % segmentsT) * 2]
-        ]);
-        gb.AddVerticesTakeOwnership([
-          bands[ip][((jp + 1) % segmentsT) * 2],
-          bands[i][((jp + 2) % segmentsT) * 2],
-          bands[ip][((jp + 3) % segmentsT) * 2],
-        ]);
+        gb.AddVerticesTakeOwnership([b(i, jp), b(i + 1, jp + 1), b(i, jp + 2)]);
+
+        gb.AddVerticesTakeOwnership(
+            [b(i, jp + 2), b(i + 1, jp + 1), b(i + 1, jp + 3)]);
       } else {
-        gb.AddVerticesTakeOwnership([
-          bands[i][jp * 2],
-          bands[ip][((jp + 1) % segmentsT) * 2],
-          bands[i][((jp + 2) % segmentsT) * 2]
-        ]);
-        gb.AddVerticesTakeOwnership([
-          bands[ip][((jp + 1) % segmentsT) * 2],
-          bands[i][((jp + 2) % segmentsT) * 2],
-          bands[ip][((jp + 3) % segmentsT) * 2],
-        ]);
+        // TODO: needs more work for triangle orientation
+        gb.AddVerticesTakeOwnership([b(i, jp), b(i + 1, jp + 1), b(i, jp + 2)]);
+        gb.AddVerticesTakeOwnership(
+            [b(i, jp + 2), b(i + 1, jp + 1), b(i + 1, jp + 3)]);
       }
     }
   }
@@ -86,14 +75,39 @@ CGL.GeometryBuilder TorusKnotGeometryTriangularWireframeFriendly(
 void MyGenerateWireframeCenters(CGL.GeometryBuilder gb) {
   List<VM.Vector4> center = List<VM.Vector4>(gb.vertices.length);
 
-  VM.Vector4 a3 = VM.Vector4(1.0, 0.0, 0.0, 0.0);
-  VM.Vector4 b3 = VM.Vector4(0.0, 1.0, 0.0, 0.0);
-  VM.Vector4 c3 = VM.Vector4(0.0, 0.0, 1.0, 0.0);
+  List<VM.Vector4> center3  = [
+    VM.Vector4(1.0, 100.0, 0.0, 0.0),
+    VM.Vector4(100.0, 1.0, 0.0, 0.0),
+    VM.Vector4(100.0, 100.0, 1.0, 0.0),
 
+    VM.Vector4(1.0, 100.0, 100.0, 0.0),
+    VM.Vector4(0.0, 1.0, 100.0, 0.0),
+    VM.Vector4(0.0, 100.0, 1.0, 0.0),
+
+    VM.Vector4(1.0, 100.0, 100.0, 0.0),
+    VM.Vector4(0.0, 1.0, 100.0, 0.0),
+    VM.Vector4(0.0, 100.0, 1.0, 0.0),
+
+    VM.Vector4(1.0, 100.0, 0.0, 0.0),
+    VM.Vector4(100.0, 1.0, 0.0, 0.0),
+    VM.Vector4(100.0, 100.0, 1.0, 0.0),
+
+    VM.Vector4(1.0, 0.0, 100.0, 0.0),
+    VM.Vector4(100.0, 1.0, 100.0, 0.0),
+    VM.Vector4(100.0, 0.0, 1.0, 0.0),
+
+    VM.Vector4(1.0, 0.0, 100.0, 0.0),
+    VM.Vector4(100.0, 1.0, 100.0, 0.0),
+    VM.Vector4(100.0, 0.0, 1.0, 0.0),
+  ];
+
+  int count = 0;
   for (CGL.Face3 f in gb.faces3) {
-    center[f.a] = a3.clone();
-    center[f.b] = b3.clone();
-    center[f.c] = c3.clone();
+    center[f.a] = center3[count +0];
+    center[f.b] = center3[count + 1];
+    center[f.c] = center3[count + 2];
+    count += 3;
+    if (count == center3.length) count = 0;
   }
 
   VM.Vector4 a4 = VM.Vector4(1.0, 0.0, 0.0, 1.0);
