@@ -82,6 +82,7 @@ The are lots of open issue, e.g what should we show:
   [Wireframe](http://art.muth.org/pixelcity.html#WireFrameRed),
   [Daylight](http://art.muth.org/pixelcity.html#DayLight))
 * for the parts traveling inside the TK. ([for inspiration see the demoscene-ish example here](http://chronosteam.github.io/ChronosGL/Examples/)) 
+* credits - could be building signs
 * for the finale
 
 
@@ -91,3 +92,12 @@ Music is completely open too. Some ideas:
 * https://www.youtube.com/watch?v=Fk1z0TfRIR0 starting [1:10] could be the intro
 * https://www.youtube.com/watch?v=jpYNwFGaMik
 * http://www.jamendo.com/de/track/34406/life-s-things (used by demoscene-ish example)
+
+
+Places to lift instruments from:
+
+* overview: http://chrisstrelioff.ws/sound-room/about.html
+* https://github.com/padenot/litsynth
+* https://github.com/mmontag/dx7-synth-js/blob/master/images/yamaha-dx-7.png
+* drums https://github.com/philcowans/Javascript-DX7
+* drums  https://dev.opera.com/articles/drum-sounds-webaudio/
