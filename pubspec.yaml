@@ -2,12 +2,15 @@ name: delta
 description:  "delta"
 
 environment:
-   sdk: '>=2.0.0'
+  sdk: '>=2.0.0'
 
 dependencies:
   sprintf: any
   js: ">= 0.6.1"
-  chronosgl: ">= 3.8.0"
+  chronosgl: "< 4.0.0"
+  #chronosgl:
+  #  path: ../ChronosGL
+
   vector_math: ">=2.0.5 <3.0.0"
 
 dev_dependencies:

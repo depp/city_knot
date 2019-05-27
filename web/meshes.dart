@@ -8,6 +8,8 @@ import 'package:vector_math/vector_math.dart' as VM;
 import 'floorplan.dart';
 import 'logging.dart';
 
+// The final version will set magicMutl to 2 but this is slow
+// to start up so during development it will be 1
 const int magicMult = 1;
 const double kRadius = 500.0 * magicMult;
 const double kHeightScale = 1.0;

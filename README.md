@@ -1,12 +1,80 @@
-# Dart Getting Started
+# Delta 1 
+
+The demo consists of a exploring a citiscape wrapped around a torusknot 
+
+Target duration: 2-3min
+
+
+Go to http://0.0.0.0:8080/build/delta.html for what we have so far
+
+
+## A Very Preliminary Script
+
+basically we are alternating between travelling on the surface or inside a torus knot
+and changing themes (audio/video) whenever there is a transition.
+
+1. **15 sec** the camera will start far away from the TK and move towards it until it almost touches the surface 
+2. **20 sec** it will then travel along the surface of the TK hovering over one of the roads until
+             the road leads into an underground tunnel
+3. **15 sec** the camera now travel inside the TK - this is a standard demoscene situation - ideas welcome
+4. **20 sec** trip along outside of TK (variation of 2.) 
+5. **15 sec** trip inside the TK (variation of 3.) 
+6. **20 sec** trip along outside of TK (variation of 2.) 
+7. **15 sec** trip inside the TK (variation of 3.) 
+8. **10 sec** Finale
+
+
+## Top Priorities
+
+* Script/Storyboard
+* Ideas for inside torus knot theme
+* Ideas for finale
+* Music composition
+* Implementation: video
+* Implementation: audio
+
+
+## Secondary Priorities
+
+* cars - fallback: no cars
+* audio-video sync (maybe even fft based effects) - fallback: sync based on time elapsed since music started
+* background - fallback: no background, pick routes with litte visible background
+* fancy building interiors with paralax shaders - fallback: simple facade texture as in pixelcity
+* ideas for beginning: switch from planar city to city on torus know - fallback: zoom from distance to torus knot
+
+## Backup
+
+### Inside torus knot ideas
+
+* check shader toy for tunnel ideas
+* stick buildings on the inside
+
+
+### Music 
+
+* https://www.youtube.com/watch?v=aoXOdAUD7IM starting at [0:15] it has this interesting helicopter like sound which slowly morphs until [1:20]
+* https://www.youtube.com/watch?v=Fk1z0TfRIR0 starting [1:10] could be the intro
+* https://www.youtube.com/watch?v=jpYNwFGaMik
+* http://www.jamendo.com/de/track/34406/life-s-things (used by demoscene-ish example)
+* https://www.youtube.com/watch?v=MFu66ye6YWM
+* https://soundcloud.com/twoseventwo/return-to-the-earth
+* https://soundcloud.com/twoseventwo/dreams-of-a-forgotten-past
+
+### Synthesizer
+
+* overview: http://chrisstrelioff.ws/sound-room/about.html
+* https://github.com/padenot/litsynth
+* https://github.com/mmontag/dx7-synth-js/blob/master/images/yamaha-dx-7.png
+* drums https://github.com/philcowans/Javascript-DX7
+* drums  https://dev.opera.com/articles/drum-sounds-webaudio/
+
+
+
+
+## Setup andf Development
+
 
 Note: run `make` without arguments for more info
-
-A recent runnable preview can be found at http://art.muth.org/delta.html
-(This is a simplified version to keep load times short).
-
-## Setup
-
 
 ### git issues
 
@@ -50,54 +118,4 @@ make build_release
 make serve_release
 
 
-Go to http://0.0.0.0:8080/build/delta.html
 
-
-## "Vision"
-
-The demo consists of a exploring a citiscape wrapped around a torusknot 
-
-Target duration: 2-3min
-
-### Script
-
-1. **15 sec** the camera will start far away from the TK and move towards it until it almost touches the surface 
-2. **20 sec** it will then travel along the surface of the TK hovering over one of the roads until
-             the road leads into an underground tunnel
-3. **15 sec** the camera now travel inside the TK - this is a standard demoscene situation - ideas welcome
-4. **20 sec** trip along outside of TK (variation of 2.) 
-5. **15 sec** trip inside the TK (variation of 3.) 
-6. **20 sec** trip along outside of TK (variation of 2.) 
-7. **15 sec** trip inside the TK (variation of 3.) 
-8. **10 sec** Finale
-
-
-
-
-The are lots of open issue, e.g what should we show:
-
-* in the background (maybe smaller version of TK)
-* for the parts traveling on the surface of the TK (variations of PixelCity scheme would be relatively easy 
-  [Standard](http://art.muth.org/pixelcity.html#Standard),
-  [Wireframe](http://art.muth.org/pixelcity.html#WireFrameRed),
-  [Daylight](http://art.muth.org/pixelcity.html#DayLight))
-* for the parts traveling inside the TK. ([for inspiration see the demoscene-ish example here](http://chronosteam.github.io/ChronosGL/Examples/)) 
-* credits - could be building signs
-* for the finale
-
-
-Music is completely open too. Some ideas:
-
-* https://www.youtube.com/watch?v=aoXOdAUD7IM starting at [0:15] it has this interesting helicopter like sound which slowly morphs until [1:20]
-* https://www.youtube.com/watch?v=Fk1z0TfRIR0 starting [1:10] could be the intro
-* https://www.youtube.com/watch?v=jpYNwFGaMik
-* http://www.jamendo.com/de/track/34406/life-s-things (used by demoscene-ish example)
-
-
-Places to lift instruments from:
-
-* overview: http://chrisstrelioff.ws/sound-room/about.html
-* https://github.com/padenot/litsynth
-* https://github.com/mmontag/dx7-synth-js/blob/master/images/yamaha-dx-7.png
-* drums https://github.com/philcowans/Javascript-DX7
-* drums  https://dev.opera.com/articles/drum-sounds-webaudio/
