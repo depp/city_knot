@@ -181,6 +181,7 @@ void main() {
         ..UpdateFov(60.0);
   final CGL.Framebuffer fb =
       CGL.Framebuffer.Default(cgl, canvas.clientWidth, canvas.clientHeight);
+  final CGL.Framebuffer screen = CGL.Framebuffer.Screen(cgl);
 
   final Math.Random rng = Math.Random(0);
 
@@ -349,6 +350,12 @@ void main() {
         break;
       case "sketch-outside":
         tkc.SetTubeRadius(kTubeRadius + 50.0);
+        fb.Activate(
+            CGL.GL_CLEAR_ALL, 0, 0, canvas.clientWidth, canvas.clientHeight);
+        sketchPrepProg.Draw(
+            buildingsSketch, [sketchMat, perspective, illumination, dummyMat]);
+        screen.Activate(
+            CGL.GL_CLEAR_ALL, 0, 0, canvas.clientWidth, canvas.clientHeight);
         progSketchFinal.Draw(
             buildingsSketch, [sketchMat, perspective, illumination, dummyMat]);
         torusProg.Draw(tkStreet, [mat, perspective, dummyMat]);

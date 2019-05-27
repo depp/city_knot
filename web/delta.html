@@ -43,6 +43,9 @@
         sequencer.cueUp(pattern);
         sequencer.startLoop();
     }
+
+
+
     </script>
 
 </head>
@@ -59,14 +62,21 @@
     </select>Route
 
     <select id="theme">
-        <option selected>night-outside</option>
-        <option>wireframe-outside</option>
-        <option>plasma-inside</option>
-        <option>wireframe-inside</option>
-        <option>wireframe-inside-hexagon</option>
-        <option>wireframe-inside-varying-width</option>
-        <option>wireframe-orbit-far</option>
-        <option>night-orbit-near</option>
+        <optgroup label="outside">
+            <option>sketch-outside</option>
+            <option>night-outside</option>
+            <option>wireframe-outside</option>
+        </optgroup>
+        <optgroup label="inside">
+            <option>plasma-inside</option>
+            <option>wireframe-inside</option>
+            <option>wireframe-inside-hexagon</option>
+            <option>wireframe-inside-varying-width</option>
+        </optgroup>
+        <optgroup label="camera movements">
+            <option>wireframe-orbit-far</option>
+            <option>night-orbit-near</option>
+        </optgroup>
     </select>Theme
 
     <button id="music">Play Music</button>
