@@ -12,8 +12,8 @@ const int magicMult = 1;
 const double kRadius = 500.0 * magicMult;
 const double kHeightScale = 1.0;
 const double kTubeRadius = 100.0 * magicMult;
-const int kWidth = 240 * magicMult;  // divisible by 3 and 8
-const int kHeight = 2400 * magicMult;  // divisible by 3 and 8
+const int kWidth = 240 * magicMult; // divisible by 3 and 8
+const int kHeight = 2400 * magicMult; // divisible by 3 and 8
 const double kBuildingDim = 20;
 
 /// Like ShapeTorusKnotGeometry but with duplicate Vertices to make it
@@ -75,27 +75,22 @@ CGL.GeometryBuilder TorusKnotGeometryTriangularWireframeFriendly(
 void MyGenerateWireframeCenters(CGL.GeometryBuilder gb) {
   List<VM.Vector4> center = List<VM.Vector4>(gb.vertices.length);
 
-  List<VM.Vector4> center3  = [
+  List<VM.Vector4> center3 = [
     VM.Vector4(1.0, 100.0, 0.0, 0.0),
     VM.Vector4(100.0, 1.0, 0.0, 0.0),
     VM.Vector4(100.0, 100.0, 1.0, 0.0),
-
     VM.Vector4(1.0, 100.0, 100.0, 0.0),
     VM.Vector4(0.0, 1.0, 100.0, 0.0),
     VM.Vector4(0.0, 100.0, 1.0, 0.0),
-
     VM.Vector4(1.0, 100.0, 100.0, 0.0),
     VM.Vector4(0.0, 1.0, 100.0, 0.0),
     VM.Vector4(0.0, 100.0, 1.0, 0.0),
-
     VM.Vector4(1.0, 100.0, 0.0, 0.0),
     VM.Vector4(100.0, 1.0, 0.0, 0.0),
     VM.Vector4(100.0, 100.0, 1.0, 0.0),
-
     VM.Vector4(1.0, 0.0, 100.0, 0.0),
     VM.Vector4(100.0, 1.0, 100.0, 0.0),
     VM.Vector4(100.0, 0.0, 1.0, 0.0),
-
     VM.Vector4(1.0, 0.0, 100.0, 0.0),
     VM.Vector4(100.0, 1.0, 100.0, 0.0),
     VM.Vector4(100.0, 0.0, 1.0, 0.0),
@@ -103,7 +98,7 @@ void MyGenerateWireframeCenters(CGL.GeometryBuilder gb) {
 
   int count = 0;
   for (CGL.Face3 f in gb.faces3) {
-    center[f.a] = center3[count +0];
+    center[f.a] = center3[count + 0];
     center[f.b] = center3[count + 1];
     center[f.c] = center3[count + 2];
     count += 3;
@@ -230,6 +225,8 @@ CGL.GeometryBuilder MakeBuildings(
   out.EnableAttribute(CGL.aTexUV);
   out.EnableAttribute(CGL.aCenter);
 
+  VM.Matrix3 matNormal = VM.Matrix3.zero();
+
   for (Building b in floorplan.GetBuildings()) {
     final int y = b.base.x.floor();
     final int x = b.base.y.floor();
@@ -252,7 +249,9 @@ CGL.GeometryBuilder MakeBuildings(
     transform.transform.invert();
     transform.setPosFromVec(pos);
 
-    out.MergeAndTakeOwnership(gb, transform.transform);
+    // TODO: this is not quite correct
+    transform.transform.copyRotation(matNormal);
+    out.MergeAndTakeOwnership(gb, transform.transform, matNormal);
   }
   print("final building gb ${out}");
   return out;

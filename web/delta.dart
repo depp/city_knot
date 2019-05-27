@@ -9,6 +9,7 @@ import 'logging.dart';
 import 'meshes.dart';
 import 'mondrianjs.dart';
 import 'shaders.dart';
+import 'textures.dart';
 
 final HTML.InputElement gManualCamera =
     HTML.document.querySelector('#manualcam') as HTML.InputElement;
@@ -178,6 +179,8 @@ void main() {
   final CGL.Perspective perspective =
       CGL.PerspectiveResizeAware(cgl, canvas, tkc, 0.1, 20000.0)
         ..UpdateFov(60.0);
+  final CGL.Framebuffer fb =
+      CGL.Framebuffer.Default(cgl, canvas.clientWidth, canvas.clientHeight);
 
   final Math.Random rng = Math.Random(0);
 
@@ -207,6 +210,17 @@ void main() {
   final dummyMat = CGL.Material("")
     ..SetUniform(CGL.uModelMatrix, VM.Matrix4.identity());
 
+  final VM.Vector3 dirLight = VM.Vector3(2.0, -1.2, 0.5);
+  CGL.Light light = CGL.DirectionalLight(
+      "dir", dirLight, CGL.ColorWhite, CGL.ColorBlack, 1000.0);
+
+  final CGL.Illumination illumination = CGL.Illumination()..AddLight(light);
+
+  final sketchMat = CGL.Material("")
+    ..SetUniform(CGL.uShininess, 10.0)
+    ..SetUniform(CGL.uTexture2, fb.colorTexture)
+    ..SetUniform(CGL.uTexture, MakeNoiseTesture(cgl, rng));
+
   // Programs
   final CGL.RenderProgram torusProg = CGL.RenderProgram(
       "torus", cgl, texturedVertexShader, texturedFragmentShader);
@@ -222,6 +236,9 @@ void main() {
       cgl,
       CGL.perlinNoiseVertexShader,
       CGL.makePerlinNoiseColorFragmentShader(false));
+
+  final CGL.RenderProgram progSketchFinal =
+      CGL.RenderProgram("final", cgl, sketchVertexShader, sketchFragmentShader);
   //
   final CGL.GeometryBuilder torus = TorusKnot(kHeight, kWidth);
   final CGL.GeometryBuilder buildings = MakeBuildings(floorplan, torus);
@@ -238,6 +255,11 @@ void main() {
   final tkWireframeHex =
       CGL.GeometryBuilderToMeshData("", wireframeProg, torusWFeHex);
   final tkStreet = CGL.GeometryBuilderToMeshData("torusknot", torusProg, torus);
+
+  final sketchPrepProg = CGL.RenderProgram(
+      "sketch-prep", cgl, sketchPrepVertexShader, sketchPrepFragmentShader);
+  final buildingsSketch =
+      CGL.GeometryBuilderToMeshData("sketch", progSketchFinal, buildings);
 
   double zeroTimeMs = 0.0;
   double lastTimeMs = 0.0;
@@ -324,6 +346,12 @@ void main() {
             buildingsWireframe, [perspective, dummyMat, matBuilding]);
         wireframeProg.Draw(
             tkWireframe, [perspective, dummyMat, matTorusknotWireframe]);
+        break;
+      case "sketch-outside":
+        tkc.SetTubeRadius(kTubeRadius + 50.0);
+        progSketchFinal.Draw(
+            buildingsSketch, [sketchMat, perspective, illumination, dummyMat]);
+        torusProg.Draw(tkStreet, [mat, perspective, dummyMat]);
         break;
       case "night-outside":
       default:
