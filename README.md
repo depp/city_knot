@@ -5,7 +5,8 @@ The demo consists of a exploring a citiscape wrapped around a torusknot
 Target duration: 2-3min
 
 
-Go to http://0.0.0.0:8080/build/delta.html for what we have so far
+Go to http://art.muth.org/delta.html for what we have so far
+(Robert will update this occasionally)
 
 
 ## A Very Preliminary Script
