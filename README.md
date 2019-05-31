@@ -49,6 +49,10 @@ and changing themes (audio/video) whenever there is a transition.
 
 * check shader toy for tunnel ideas
 * stick buildings on the inside
+* point tunnel https://www.shadertoy.com/view/Xlt3R8
+* disco tunnel https://www.shadertoy.com/view/XstfzB
+* https://www.shadertoy.com/view/wdBGWD
+  more by smae coder https://www.shadertoy.com/user/lsdlive
 
 
 ### Music 
@@ -68,8 +72,7 @@ and changing themes (audio/video) whenever there is a transition.
 * https://github.com/mmontag/dx7-synth-js/blob/master/images/yamaha-dx-7.png
 * drums https://github.com/philcowans/Javascript-DX7
 * drums  https://dev.opera.com/articles/drum-sounds-webaudio/
-
-
+* http://www.graffathon.fi/2016/presentations/additive_slides.pdf
 
 
 ## Setup andf Development
