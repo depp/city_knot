@@ -220,7 +220,7 @@ class Scene {
   }
 
   void Draw(CGL.ChronosGL cgl, CGL.Perspective perspective) {
-    program.Draw(mesh, [mat, perspective, dummyMat]);
+    program.Draw(mesh, [perspective, dummyMat, mat]);
   }
 
   CGL.Material mat;
@@ -298,11 +298,6 @@ void main() {
   final torusWFeHex = TorusKnotWireframeHexagons(kHeight ~/ 8, kWidth ~/ 8);
 
   // Meshes
-
-  final tkWireframe = CGL.GeometryBuilderToMeshData("", wireframeProg, torusWF);
-  final tkWireframeHex =
-      CGL.GeometryBuilderToMeshData("", wireframeProg, torusWFeHex);
-
   final sketchPrepProg = CGL.RenderProgram(
       "sketch-prep", cgl, sketchPrepVertexShader, sketchPrepFragmentShader);
   final buildingsSketch =
@@ -387,16 +382,12 @@ void main() {
         break;
       case "wireframe-inside-hexagon":
         outsideWireframeBuildings.Draw(cgl, perspective);
-        //insideWireframeHex.Draw(cgl, perspective);
-        wireframeProg.Draw(
-            tkWireframeHex, [perspective, dummyMat, matTorusknotWireframe]);
+        insideWireframeHex.Draw(cgl, perspective);
         break;
       case "wireframe-inside":
       case "wireframe-inside-varying-width":
         outsideWireframeBuildings.Draw(cgl, perspective);
-        //insideWireframe.Draw(cgl, perspective);
-        wireframeProg.Draw(
-            tkWireframe, [perspective, dummyMat, matTorusknotWireframe]);
+        insideWireframe.Draw(cgl, perspective);
         break;
       case "gol-inside":
         break;
