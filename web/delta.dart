@@ -178,6 +178,27 @@ class Scene {
     mesh = CGL.GeometryBuilderToMeshData("torusknot", program, torus);
   }
 
+  Scene.OutsideWireframeBuildings(
+      CGL.ChronosGL cgl, CGL.GeometryBuilder building) {
+    mat = CGL.Material("wf")
+      ..SetUniform(uWidth, 1.5)
+      ..SetUniform(CGL.uColor, VM.Vector3(1.0, 1.0, 0.0))
+      ..SetUniform(CGL.uColorAlpha, VM.Vector4(1.0, 0.0, 0.0, 1.0))
+      ..SetUniform(CGL.uColorAlpha2, VM.Vector4(0.1, 0.0, 0.0, 1.0));
+
+    program = CGL.RenderProgram(
+        "wf", cgl, wireframeVertexShader, wireframeFragmentShader);
+    mesh = CGL.GeometryBuilderToMeshData("wf", program, building);
+  }
+
+  Scene.OutsideNightBuildings(
+      CGL.ChronosGL cgl, CGL.GeometryBuilder buildings) {
+    mat = CGL.Material("building");
+    program = CGL.RenderProgram(
+        "building", cgl, multiColorVertexShader, multiColorFragmentShader);
+    mesh = CGL.GeometryBuilderToMeshData("buildings", program, buildings);
+  }
+
   Scene.InsidePlasma(CGL.ChronosGL cgl, CGL.GeometryBuilder torus) {
     mat = CGL.Material("plasma")
       ..ForceUniform(CGL.cBlendEquation, CGL.BlendEquationStandard);
@@ -248,12 +269,6 @@ void main() {
     ..SetUniform(CGL.uColorAlpha, VM.Vector4(0.0, 0.0, 1.0, 1.0))
     ..SetUniform(CGL.uColorAlpha2, VM.Vector4(0.0, 0.0, 0.1, 0.1));
 
-  final CGL.Material matBuilding = CGL.Material("building")
-    ..SetUniform(uWidth, 1.5)
-    ..SetUniform(CGL.uColor, VM.Vector3(1.0, 1.0, 0.0))
-    ..SetUniform(CGL.uColorAlpha, VM.Vector4(1.0, 0.0, 0.0, 1.0))
-    ..SetUniform(CGL.uColorAlpha2, VM.Vector4(0.1, 0.0, 0.0, 1.0));
-
   final dummyMat = CGL.Material("")
     ..SetUniform(CGL.uModelMatrix, VM.Matrix4.identity());
 
@@ -270,9 +285,6 @@ void main() {
 
   // Programs
 
-  final progMulticolor = CGL.RenderProgram(
-      "building", cgl, multiColorVertexShader, multiColorFragmentShader);
-
   final wireframeProg = CGL.RenderProgram(
       "building", cgl, wireframeVertexShader, wireframeFragmentShader);
 
@@ -286,10 +298,7 @@ void main() {
   final torusWFeHex = TorusKnotWireframeHexagons(kHeight ~/ 8, kWidth ~/ 8);
 
   // Meshes
-  final buildingsNight =
-      CGL.GeometryBuilderToMeshData("buildings", progMulticolor, buildings);
-  final buildingsWireframe =
-      CGL.GeometryBuilderToMeshData("buildings-wf", wireframeProg, buildings);
+
   final tkWireframe = CGL.GeometryBuilderToMeshData("", wireframeProg, torusWF);
   final tkWireframeHex =
       CGL.GeometryBuilderToMeshData("", wireframeProg, torusWFeHex);
@@ -301,6 +310,10 @@ void main() {
 
   // Scenes
   final Scene outsideSteet = Scene.OutsideStreet(cgl, floorplan, torus);
+  final Scene outsideWireframeBuildings =
+      Scene.OutsideWireframeBuildings(cgl, buildings);
+  final Scene outsideNightBuildings =
+      Scene.OutsideNightBuildings(cgl, buildings);
   final Scene insidePlasma = Scene.InsidePlasma(cgl, torusWF);
   final Scene insideWireframe = Scene.InsideWireframe(cgl, torusWF);
   final Scene insideWireframeHex = Scene.InsideWireframe(cgl, torusWFeHex);
@@ -365,26 +378,22 @@ void main() {
       case "wireframe-outside":
       case "wireframe-orbit-far":
         tkc.SetTubeRadius(kTubeRadius + 50.0);
-        wireframeProg.Draw(
-            buildingsWireframe, [matBuilding, perspective, dummyMat]);
+        outsideWireframeBuildings.Draw(cgl, perspective);
         outsideSteet.Draw(cgl, perspective);
         break;
       case "plasma-inside":
-        wireframeProg.Draw(
-            buildingsWireframe, [perspective, dummyMat, matBuilding]);
+        outsideWireframeBuildings.Draw(cgl, perspective);
         insidePlasma.Draw(cgl, perspective);
         break;
       case "wireframe-inside-hexagon":
-        wireframeProg.Draw(
-            buildingsWireframe, [perspective, dummyMat, matBuilding]);
+        outsideWireframeBuildings.Draw(cgl, perspective);
         //insideWireframeHex.Draw(cgl, perspective);
         wireframeProg.Draw(
             tkWireframeHex, [perspective, dummyMat, matTorusknotWireframe]);
         break;
       case "wireframe-inside":
       case "wireframe-inside-varying-width":
-        wireframeProg.Draw(
-            buildingsWireframe, [perspective, dummyMat, matBuilding]);
+        outsideWireframeBuildings.Draw(cgl, perspective);
         //insideWireframe.Draw(cgl, perspective);
         wireframeProg.Draw(
             tkWireframe, [perspective, dummyMat, matTorusknotWireframe]);
@@ -406,8 +415,7 @@ void main() {
       case "night-outside":
       default:
         tkc.SetTubeRadius(kTubeRadius + 50.0);
-        progMulticolor.Draw(
-            buildingsNight, [matBuilding, perspective, dummyMat]);
+        outsideNightBuildings.Draw(cgl, perspective);
         outsideSteet.Draw(cgl, perspective);
         break;
     }
