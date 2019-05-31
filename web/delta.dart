@@ -10,6 +10,7 @@ import 'meshes.dart';
 import 'mondrianjs.dart';
 import 'shaders.dart';
 import 'textures.dart';
+// import 'gol.dart';
 
 final HTML.InputElement gManualCamera =
     HTML.document.querySelector('#manualcam') as HTML.InputElement;
@@ -156,6 +157,38 @@ CGL.Texture MakeFloorplanTexture(CGL.ChronosGL cgl, Floorplan floorplan) {
   return CGL.ImageTexture(cgl, "noise", canvas, tp);
 }
 
+class Scene {
+  Scene.InsideGOL(CGL.ChronosGL cgl) {
+    mat = CGL.Material("gol")
+      ..ForceUniform(CGL.cBlendEquation, CGL.BlendEquationStandard)
+      ..SetUniform(CGL.uColor, VM.Vector3(0.0, 0.0, 0.0));
+
+    //mesh = CGL.GeometryBuilderToMeshData("gol", program, gb);
+  }
+
+  Scene.OutsideBuilding(CGL.ChronosGL cgl) {}
+
+  Scene.OutsideStreet(
+      CGL.ChronosGL cgl, Floorplan floorplan, CGL.GeometryBuilder torus) {
+    mat = CGL.Material("street")
+      ..SetUniform(CGL.uTexture, MakeFloorplanTexture(cgl, floorplan))
+      ..SetUniform(CGL.uColor, VM.Vector3.zero());
+    program = CGL.RenderProgram(
+        "street", cgl, texturedVertexShader, texturedFragmentShader);
+    mesh = CGL.GeometryBuilderToMeshData("torusknot", program, torus);
+  }
+
+  void Draw(CGL.ChronosGL cgl, CGL.Perspective perspective) {
+    program.Draw(mesh, [mat, perspective, dummyMat]);
+  }
+
+  CGL.Material mat;
+  CGL.RenderProgram program;
+  CGL.MeshData mesh;
+  final CGL.Material dummyMat = CGL.Material("")
+    ..SetUniform(CGL.uModelMatrix, VM.Matrix4.identity());
+}
+
 void main() {
   final CGL.StatsFps fps =
       CGL.StatsFps(HTML.document.getElementById("stats"), "blue", "gray");
@@ -188,9 +221,6 @@ void main() {
   final Floorplan floorplan = Floorplan(kHeight, kWidth, 10, rng);
 
   // Material
-  final CGL.Material mat = CGL.Material("center")
-    ..SetUniform(CGL.uTexture, MakeFloorplanTexture(cgl, floorplan))
-    ..SetUniform(CGL.uColor, VM.Vector3.zero());
 
   final CGL.Material matBuilding = CGL.Material("building")
     ..SetUniform(uWidth, 1.5)
@@ -223,8 +253,6 @@ void main() {
     ..SetUniform(CGL.uTexture, MakeNoiseTesture(cgl, rng));
 
   // Programs
-  final CGL.RenderProgram torusProg = CGL.RenderProgram(
-      "torus", cgl, texturedVertexShader, texturedFragmentShader);
 
   final progMulticolor = CGL.RenderProgram(
       "building", cgl, multiColorVertexShader, multiColorFragmentShader);
@@ -244,7 +272,7 @@ void main() {
   final CGL.GeometryBuilder torus = TorusKnot(kHeight, kWidth);
   final CGL.GeometryBuilder buildings = MakeBuildings(floorplan, torus);
   final CGL.GeometryBuilder torusWF =
-      TorusKnotWireframe(kHeight ~/ 8, kWidth ~/ 8);
+      InsideTorusKnotWireframe(kHeight ~/ 8, kWidth ~/ 8);
   final torusWFeHex = TorusKnotWireframeHexagons(kHeight ~/ 8, kWidth ~/ 8);
 
   // Meshes
@@ -255,12 +283,14 @@ void main() {
   final tkWireframe = CGL.GeometryBuilderToMeshData("", wireframeProg, torusWF);
   final tkWireframeHex =
       CGL.GeometryBuilderToMeshData("", wireframeProg, torusWFeHex);
-  final tkStreet = CGL.GeometryBuilderToMeshData("torusknot", torusProg, torus);
 
   final sketchPrepProg = CGL.RenderProgram(
       "sketch-prep", cgl, sketchPrepVertexShader, sketchPrepFragmentShader);
   final buildingsSketch =
       CGL.GeometryBuilderToMeshData("sketch", progSketchFinal, buildings);
+
+  // Scenes
+  final Scene outsideSteet = Scene.OutsideStreet(cgl, floorplan, torus);
 
   double zeroTimeMs = 0.0;
   double lastTimeMs = 0.0;
@@ -328,7 +358,7 @@ void main() {
         tkc.SetTubeRadius(kTubeRadius + 50.0);
         wireframeProg.Draw(
             buildingsWireframe, [matBuilding, perspective, dummyMat]);
-        torusProg.Draw(tkStreet, [mat, perspective, dummyMat]);
+        outsideSteet.Draw(cgl, perspective);
         break;
       case "plasma-inside":
         wireframeProg.Draw(
@@ -348,6 +378,8 @@ void main() {
         wireframeProg.Draw(
             tkWireframe, [perspective, dummyMat, matTorusknotWireframe]);
         break;
+      case "gol-inside":
+        break;
       case "sketch-outside":
         tkc.SetTubeRadius(kTubeRadius + 50.0);
         fb.Activate(
@@ -358,15 +390,14 @@ void main() {
             CGL.GL_CLEAR_ALL, 0, 0, canvas.clientWidth, canvas.clientHeight);
         progSketchFinal.Draw(
             buildingsSketch, [sketchMat, perspective, illumination, dummyMat]);
-        torusProg.Draw(tkStreet, [mat, perspective, dummyMat]);
+        outsideSteet.Draw(cgl, perspective);
         break;
       case "night-outside":
       default:
         tkc.SetTubeRadius(kTubeRadius + 50.0);
         progMulticolor.Draw(
             buildingsNight, [matBuilding, perspective, dummyMat]);
-
-        torusProg.Draw(tkStreet, [mat, perspective, dummyMat]);
+        outsideSteet.Draw(cgl, perspective);
         break;
     }
 
