@@ -178,6 +178,26 @@ class Scene {
     mesh = CGL.GeometryBuilderToMeshData("torusknot", program, torus);
   }
 
+  Scene.InsidePlasma(CGL.ChronosGL cgl, CGL.GeometryBuilder torus) {
+    mat = CGL.Material("plasma")
+      ..ForceUniform(CGL.cBlendEquation, CGL.BlendEquationStandard);
+    program = CGL.RenderProgram("plasma", cgl, CGL.perlinNoiseVertexShader,
+        CGL.makePerlinNoiseColorFragmentShader(false));
+    mesh = CGL.GeometryBuilderToMeshData("plasma", program, torus);
+  }
+
+  Scene.InsideWireframe(CGL.ChronosGL cgl, CGL.GeometryBuilder torus) {
+    mat = CGL.Material("wf")
+      ..SetUniform(uWidth, 1.5)
+      ..ForceUniform(CGL.cBlendEquation, CGL.BlendEquationStandard)
+      ..SetUniform(CGL.uColorAlpha, VM.Vector4(0.0, 0.0, 1.0, 1.0))
+      ..SetUniform(CGL.uColorAlpha2, VM.Vector4(0.0, 0.0, 0.1, 0.1));
+
+    program = CGL.RenderProgram(
+        "wf", cgl, wireframeVertexShader, wireframeFragmentShader);
+    mesh = CGL.GeometryBuilderToMeshData("wf", program, torus);
+  }
+
   void Draw(CGL.ChronosGL cgl, CGL.Perspective perspective) {
     program.Draw(mesh, [mat, perspective, dummyMat]);
   }
@@ -221,13 +241,6 @@ void main() {
   final Floorplan floorplan = Floorplan(kHeight, kWidth, 10, rng);
 
   // Material
-
-  final CGL.Material matBuilding = CGL.Material("building")
-    ..SetUniform(uWidth, 1.5)
-    ..SetUniform(CGL.uColor, VM.Vector3(1.0, 1.0, 0.0))
-    ..SetUniform(CGL.uColorAlpha, VM.Vector4(1.0, 0.0, 0.0, 1.0))
-    ..SetUniform(CGL.uColorAlpha2, VM.Vector4(0.1, 0.0, 0.0, 1.0));
-
   final CGL.Material matTorusknotWireframe = CGL.Material("tkWF")
     ..SetUniform(uWidth, 1.5)
     ..ForceUniform(CGL.cBlendEquation, CGL.BlendEquationStandard)
@@ -235,8 +248,11 @@ void main() {
     ..SetUniform(CGL.uColorAlpha, VM.Vector4(0.0, 0.0, 1.0, 1.0))
     ..SetUniform(CGL.uColorAlpha2, VM.Vector4(0.0, 0.0, 0.1, 0.1));
 
-  final CGL.Material matPlasma = CGL.Material("plasma")
-    ..ForceUniform(CGL.cBlendEquation, CGL.BlendEquationStandard);
+  final CGL.Material matBuilding = CGL.Material("building")
+    ..SetUniform(uWidth, 1.5)
+    ..SetUniform(CGL.uColor, VM.Vector3(1.0, 1.0, 0.0))
+    ..SetUniform(CGL.uColorAlpha, VM.Vector4(1.0, 0.0, 0.0, 1.0))
+    ..SetUniform(CGL.uColorAlpha2, VM.Vector4(0.1, 0.0, 0.0, 1.0));
 
   final dummyMat = CGL.Material("")
     ..SetUniform(CGL.uModelMatrix, VM.Matrix4.identity());
@@ -259,12 +275,6 @@ void main() {
 
   final wireframeProg = CGL.RenderProgram(
       "building", cgl, wireframeVertexShader, wireframeFragmentShader);
-
-  final programPerlin = CGL.RenderProgram(
-      "perlin",
-      cgl,
-      CGL.perlinNoiseVertexShader,
-      CGL.makePerlinNoiseColorFragmentShader(false));
 
   final CGL.RenderProgram progSketchFinal =
       CGL.RenderProgram("final", cgl, sketchVertexShader, sketchFragmentShader);
@@ -291,6 +301,9 @@ void main() {
 
   // Scenes
   final Scene outsideSteet = Scene.OutsideStreet(cgl, floorplan, torus);
+  final Scene insidePlasma = Scene.InsidePlasma(cgl, torusWF);
+  final Scene insideWireframe = Scene.InsideWireframe(cgl, torusWF);
+  final Scene insideWireframeHex = Scene.InsideWireframe(cgl, torusWFeHex);
 
   double zeroTimeMs = 0.0;
   double lastTimeMs = 0.0;
@@ -331,26 +344,22 @@ void main() {
       tkc.animate(timeMs - zeroTimeMs);
     }
 
-    if (gTheme.value == "wireframe-inside-varying-width") {
-      double alpha = Math.sin(timeMs / 2000.0) * 50.0 + 52.0;
-      matTorusknotWireframe.ForceUniform(uWidth, alpha);
-    } else {
-      matTorusknotWireframe.ForceUniform(uWidth, 1.5);
-      //matBuilding.ForceUniform(uWidth, alpha);
-    }
-
     tkc.SetTubeRadius(1.0);
 
     if (gTheme.value == "wireframe-inside-varying-width" ||
         gTheme.value == "wireframe-inside-hexagon") {
       double alpha = Math.sin(timeMs / 2000.0) * 10.0 + 11.0;
+      insideWireframe.mat.ForceUniform(uWidth, alpha);
+      insideWireframeHex.mat.ForceUniform(uWidth, alpha);
       matTorusknotWireframe.ForceUniform(uWidth, alpha);
     } else {
-      matTorusknotWireframe.ForceUniform(uWidth, 2.5);
+      insideWireframe.mat.ForceUniform(uWidth, 2.5);
+      insideWireframeHex.mat.ForceUniform(uWidth, 2.5);
       //matBuilding.ForceUniform(uWidth, alpha);
+      matTorusknotWireframe.ForceUniform(uWidth, 2.5);
     }
 
-    matPlasma.ForceUniform(CGL.uTime, (timeMs - zeroTimeMs) / 5000.0);
+    insidePlasma.mat.ForceUniform(CGL.uTime, (timeMs - zeroTimeMs) / 5000.0);
 
     switch (gTheme.value) {
       case "wireframe-outside":
@@ -363,11 +372,12 @@ void main() {
       case "plasma-inside":
         wireframeProg.Draw(
             buildingsWireframe, [perspective, dummyMat, matBuilding]);
-        programPerlin.Draw(tkWireframe, [perspective, dummyMat, matPlasma]);
+        insidePlasma.Draw(cgl, perspective);
         break;
       case "wireframe-inside-hexagon":
         wireframeProg.Draw(
             buildingsWireframe, [perspective, dummyMat, matBuilding]);
+        //insideWireframeHex.Draw(cgl, perspective);
         wireframeProg.Draw(
             tkWireframeHex, [perspective, dummyMat, matTorusknotWireframe]);
         break;
@@ -375,6 +385,7 @@ void main() {
       case "wireframe-inside-varying-width":
         wireframeProg.Draw(
             buildingsWireframe, [perspective, dummyMat, matBuilding]);
+        //insideWireframe.Draw(cgl, perspective);
         wireframeProg.Draw(
             tkWireframe, [perspective, dummyMat, matTorusknotWireframe]);
         break;
