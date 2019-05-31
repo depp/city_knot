@@ -234,6 +234,45 @@ class SceneGOL extends Scene {
   }
 }
 
+class SceneSketch extends Scene {
+  SceneSketch(CGL.ChronosGL cgl, Math.Random rng, this.w, this.h,
+      CGL.GeometryBuilder buildings) {
+    fb = CGL.Framebuffer.Default(cgl, w, h);
+
+    final VM.Vector3 dirLight = VM.Vector3(2.0, -1.2, 0.5);
+    CGL.Light light = CGL.DirectionalLight(
+        "dir", dirLight, CGL.ColorWhite, CGL.ColorBlack, 1000.0);
+
+    illumination = CGL.Illumination()..AddLight(light);
+
+    screen = CGL.Framebuffer.Screen(cgl);
+
+    mat = CGL.Material("")
+      ..SetUniform(CGL.uShininess, 10.0)
+      ..SetUniform(CGL.uTexture2, fb.colorTexture)
+      ..SetUniform(CGL.uTexture, MakeNoiseTesture(cgl, rng));
+
+    programPrep = CGL.RenderProgram(
+        "sketch-prep", cgl, sketchPrepVertexShader, sketchPrepFragmentShader);
+    program = CGL.RenderProgram(
+        "final", cgl, sketchVertexShader, sketchFragmentShader);
+    mesh = CGL.GeometryBuilderToMeshData("sketch", program, buildings);
+  }
+
+  void Draw(CGL.ChronosGL cgl, CGL.Perspective perspective) {
+    fb.Activate(CGL.GL_CLEAR_ALL, 0, 0, w, h);
+    programPrep.Draw(mesh, [perspective, illumination, dummyMat, mat]);
+    screen.Activate(CGL.GL_CLEAR_ALL, 0, 0, w, h);
+    program.Draw(mesh, [perspective, illumination, dummyMat, mat]);
+  }
+
+  int w, h;
+  CGL.Framebuffer fb;
+  CGL.Illumination illumination;
+  CGL.RenderProgram programPrep;
+  CGL.Framebuffer screen;
+}
+
 void main() {
   final CGL.StatsFps fps =
       CGL.StatsFps(HTML.document.getElementById("stats"), "blue", "gray");
@@ -259,29 +298,10 @@ void main() {
   final CGL.Perspective perspective =
       CGL.PerspectiveResizeAware(cgl, canvas, tkc, 0.1, 20000.0)
         ..UpdateFov(60.0);
-  final CGL.Framebuffer fb =
-      CGL.Framebuffer.Default(cgl, canvas.clientWidth, canvas.clientHeight);
-  final CGL.Framebuffer screen = CGL.Framebuffer.Screen(cgl);
 
   final Math.Random rng = Math.Random(0);
 
   final Floorplan floorplan = Floorplan(kHeight, kWidth, 10, rng);
-
-  // Material
-
-  final dummyMat = CGL.Material("")
-    ..SetUniform(CGL.uModelMatrix, VM.Matrix4.identity());
-
-  final VM.Vector3 dirLight = VM.Vector3(2.0, -1.2, 0.5);
-  CGL.Light light = CGL.DirectionalLight(
-      "dir", dirLight, CGL.ColorWhite, CGL.ColorBlack, 1000.0);
-
-  final CGL.Illumination illumination = CGL.Illumination()..AddLight(light);
-
-  final sketchMat = CGL.Material("")
-    ..SetUniform(CGL.uShininess, 10.0)
-    ..SetUniform(CGL.uTexture2, fb.colorTexture)
-    ..SetUniform(CGL.uTexture, MakeNoiseTesture(cgl, rng));
 
   // Geometries
 
@@ -291,15 +311,8 @@ void main() {
       InsideTorusKnotWireframe(kHeight ~/ 8, kWidth ~/ 8);
   final torusWFeHex = TorusKnotWireframeHexagons(kHeight ~/ 8, kWidth ~/ 8);
 
-  // Sketch Stuff
-  final sketchPrepProg = CGL.RenderProgram(
-      "sketch-prep", cgl, sketchPrepVertexShader, sketchPrepFragmentShader);
-  final CGL.RenderProgram progSketchFinal =
-      CGL.RenderProgram("final", cgl, sketchVertexShader, sketchFragmentShader);
-  final buildingsSketch =
-      CGL.GeometryBuilderToMeshData("sketch", progSketchFinal, buildings);
-
   // Scenes
+  LogInfo("creating scenes");
   final Scene outsideSteet = Scene.OutsideStreet(cgl, floorplan, torus);
   final Scene outsideWireframeBuildings =
       Scene.OutsideWireframeBuildings(cgl, buildings);
@@ -309,6 +322,9 @@ void main() {
   final Scene insideWireframe = Scene.InsideWireframe(cgl, torusWF);
   final Scene insideWireframeHex = Scene.InsideWireframe(cgl, torusWFeHex);
   final Scene insideGOL = SceneGOL(cgl, floorplan);
+  final Scene outsideSketch =
+      SceneSketch(cgl, rng, canvas.clientWidth, canvas.clientHeight, buildings);
+  LogInfo("creating scenes done");
 
   double zeroTimeMs = 0.0;
   double lastTimeMs = 0.0;
@@ -389,14 +405,7 @@ void main() {
         break;
       case "sketch-outside":
         tkc.SetTubeRadius(kTubeRadius + 50.0);
-        fb.Activate(
-            CGL.GL_CLEAR_ALL, 0, 0, canvas.clientWidth, canvas.clientHeight);
-        sketchPrepProg.Draw(
-            buildingsSketch, [sketchMat, perspective, illumination, dummyMat]);
-        screen.Activate(
-            CGL.GL_CLEAR_ALL, 0, 0, canvas.clientWidth, canvas.clientHeight);
-        progSketchFinal.Draw(
-            buildingsSketch, [sketchMat, perspective, illumination, dummyMat]);
+        outsideSketch.Draw(cgl, perspective);
         outsideSteet.Draw(cgl, perspective);
         break;
       case "night-outside":
