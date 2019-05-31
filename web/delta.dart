@@ -5,12 +5,12 @@ import 'package:chronosgl/chronosgl.dart' as CGL;
 import 'package:vector_math/vector_math.dart' as VM;
 
 import 'floorplan.dart';
+import 'gol.dart' as GOL;
 import 'logging.dart';
 import 'meshes.dart';
 import 'mondrianjs.dart';
 import 'shaders.dart';
 import 'textures.dart';
-// import 'gol.dart';
 
 final HTML.InputElement gManualCamera =
     HTML.document.querySelector('#manualcam') as HTML.InputElement;
@@ -158,15 +158,7 @@ CGL.Texture MakeFloorplanTexture(CGL.ChronosGL cgl, Floorplan floorplan) {
 }
 
 class Scene {
-  Scene.InsideGOL(CGL.ChronosGL cgl) {
-    mat = CGL.Material("gol")
-      ..ForceUniform(CGL.cBlendEquation, CGL.BlendEquationStandard)
-      ..SetUniform(CGL.uColor, VM.Vector3(0.0, 0.0, 0.0));
-
-    //mesh = CGL.GeometryBuilderToMeshData("gol", program, gb);
-  }
-
-  Scene.OutsideBuilding(CGL.ChronosGL cgl) {}
+  Scene();
 
   Scene.OutsideStreet(
       CGL.ChronosGL cgl, Floorplan floorplan, CGL.GeometryBuilder torus) {
@@ -230,6 +222,18 @@ class Scene {
     ..SetUniform(CGL.uModelMatrix, VM.Matrix4.identity());
 }
 
+class SceneGOL extends Scene {
+  SceneGOL(CGL.ChronosGL cgl, Floorplan floorplan) {
+    mat = CGL.Material("street")
+      ..SetUniform(CGL.uTexture, MakeFloorplanTexture(cgl, floorplan))
+      ..SetUniform(CGL.uColor, VM.Vector3(0.1, 0.0, 0.0));
+    CGL.GeometryBuilder torus = InsideTorusKTexture(kHeight ~/ 8, kWidth ~/ 8);
+    program = CGL.RenderProgram(
+        "street", cgl, texturedVertexShader, texturedFragmentShader);
+    mesh = CGL.GeometryBuilderToMeshData("torusknot", program, torus);
+  }
+}
+
 void main() {
   final CGL.StatsFps fps =
       CGL.StatsFps(HTML.document.getElementById("stats"), "blue", "gray");
@@ -237,6 +241,8 @@ void main() {
   LogInfo("Params: ${params}");
 
   IntroduceShaderVars();
+  GOL.RegisterShaderVars();
+
   final HTML.CanvasElement canvas =
       HTML.document.querySelector('#webgl-canvas');
   final CGL.ChronosGL cgl = CGL.ChronosGL(canvas)..enable(CGL.GL_CULL_FACE);
@@ -262,12 +268,6 @@ void main() {
   final Floorplan floorplan = Floorplan(kHeight, kWidth, 10, rng);
 
   // Material
-  final CGL.Material matTorusknotWireframe = CGL.Material("tkWF")
-    ..SetUniform(uWidth, 1.5)
-    ..ForceUniform(CGL.cBlendEquation, CGL.BlendEquationStandard)
-    ..SetUniform(CGL.uColor, VM.Vector3(1.0, 1.0, 0.0))
-    ..SetUniform(CGL.uColorAlpha, VM.Vector4(0.0, 0.0, 1.0, 1.0))
-    ..SetUniform(CGL.uColorAlpha2, VM.Vector4(0.0, 0.0, 0.1, 0.1));
 
   final dummyMat = CGL.Material("")
     ..SetUniform(CGL.uModelMatrix, VM.Matrix4.identity());
@@ -283,23 +283,19 @@ void main() {
     ..SetUniform(CGL.uTexture2, fb.colorTexture)
     ..SetUniform(CGL.uTexture, MakeNoiseTesture(cgl, rng));
 
-  // Programs
+  // Geometries
 
-  final wireframeProg = CGL.RenderProgram(
-      "building", cgl, wireframeVertexShader, wireframeFragmentShader);
-
-  final CGL.RenderProgram progSketchFinal =
-      CGL.RenderProgram("final", cgl, sketchVertexShader, sketchFragmentShader);
-  //
   final CGL.GeometryBuilder torus = TorusKnot(kHeight, kWidth);
   final CGL.GeometryBuilder buildings = MakeBuildings(floorplan, torus);
   final CGL.GeometryBuilder torusWF =
       InsideTorusKnotWireframe(kHeight ~/ 8, kWidth ~/ 8);
   final torusWFeHex = TorusKnotWireframeHexagons(kHeight ~/ 8, kWidth ~/ 8);
 
-  // Meshes
+  // Sketch Stuff
   final sketchPrepProg = CGL.RenderProgram(
       "sketch-prep", cgl, sketchPrepVertexShader, sketchPrepFragmentShader);
+  final CGL.RenderProgram progSketchFinal =
+      CGL.RenderProgram("final", cgl, sketchVertexShader, sketchFragmentShader);
   final buildingsSketch =
       CGL.GeometryBuilderToMeshData("sketch", progSketchFinal, buildings);
 
@@ -312,6 +308,7 @@ void main() {
   final Scene insidePlasma = Scene.InsidePlasma(cgl, torusWF);
   final Scene insideWireframe = Scene.InsideWireframe(cgl, torusWF);
   final Scene insideWireframeHex = Scene.InsideWireframe(cgl, torusWFeHex);
+  final Scene insideGOL = SceneGOL(cgl, floorplan);
 
   double zeroTimeMs = 0.0;
   double lastTimeMs = 0.0;
@@ -359,12 +356,10 @@ void main() {
       double alpha = Math.sin(timeMs / 2000.0) * 10.0 + 11.0;
       insideWireframe.mat.ForceUniform(uWidth, alpha);
       insideWireframeHex.mat.ForceUniform(uWidth, alpha);
-      matTorusknotWireframe.ForceUniform(uWidth, alpha);
     } else {
       insideWireframe.mat.ForceUniform(uWidth, 2.5);
       insideWireframeHex.mat.ForceUniform(uWidth, 2.5);
       //matBuilding.ForceUniform(uWidth, alpha);
-      matTorusknotWireframe.ForceUniform(uWidth, 2.5);
     }
 
     insidePlasma.mat.ForceUniform(CGL.uTime, (timeMs - zeroTimeMs) / 5000.0);
@@ -390,6 +385,7 @@ void main() {
         insideWireframe.Draw(cgl, perspective);
         break;
       case "gol-inside":
+        insideGOL.Draw(cgl, perspective);
         break;
       case "sketch-outside":
         tkc.SetTubeRadius(kTubeRadius + 50.0);

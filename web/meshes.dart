@@ -138,7 +138,7 @@ CGL.GeometryBuilder TorusKnot(int segmentsR, int segmentsT) {
   return gb;
 }
 
-CGL.GeometryBuilder TorusKnotWireframe(int segmentsR, int segmentsT) {
+CGL.GeometryBuilder InsideTorusKnotWireframe(int segmentsR, int segmentsT) {
   LogInfo("start torus gb ${kWidth}x${kHeight}");
 
   final CGL.GeometryBuilder gb = CGL.TorusKnotGeometryWireframeFriendly(
@@ -148,6 +148,26 @@ CGL.GeometryBuilder TorusKnotWireframe(int segmentsR, int segmentsT) {
       segmentsR: segmentsR,
       segmentsT: segmentsT,
       computeUVs: false,
+      computeNormals: false,
+      inside: true);
+
+  gb.GenerateWireframeCenters();
+  //assert(gb.vertices.length == w * h);
+  LogInfo("done torus-wireframe gb ${gb}");
+
+  return gb;
+}
+
+CGL.GeometryBuilder InsideTorusKTexture(int segmentsR, int segmentsT) {
+  LogInfo("start torus gb ${kWidth}x${kHeight}");
+
+  final CGL.GeometryBuilder gb = CGL.TorusKnotGeometry(
+      heightScale: kHeightScale,
+      radius: kRadius,
+      tubeRadius: kTubeRadius,
+      segmentsR: segmentsR,
+      segmentsT: segmentsT,
+      computeUVs: true,
       computeNormals: false,
       inside: true);
 
