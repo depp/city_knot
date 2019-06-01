@@ -223,15 +223,42 @@ class Scene {
 }
 
 class SceneGOL extends Scene {
-  SceneGOL(CGL.ChronosGL cgl, Floorplan floorplan) {
-    mat = CGL.Material("street")
-      ..SetUniform(CGL.uTexture, MakeFloorplanTexture(cgl, floorplan))
-      ..SetUniform(CGL.uColor, VM.Vector3(0.1, 0.0, 0.0));
+  SceneGOL(CGL.ChronosGL cgl, this.w, this.h) {
+    Math.Random rng = Math.Random();
     CGL.GeometryBuilder torus = InsideTorusKTexture(kHeight ~/ 8, kWidth ~/ 8);
     program = CGL.RenderProgram(
-        "street", cgl, texturedVertexShader, texturedFragmentShader);
-    mesh = CGL.GeometryBuilderToMeshData("torusknot", program, torus);
+        "gol", cgl, texturedVertexShader, texturedFragmentShader);
+    mesh = CGL.GeometryBuilderToMeshData("gol", program, torus);
+
+    fb = CGL.Framebuffer.Default(cgl, kHeight * 4, kWidth * 4);
+    gol = GOL.Life(cgl, kHeight, kWidth, 4, true);
+    gol.SetRandom(rng, 10);
+    gol.SetRules(rng, "23/3");
+    gol.SetPalette("Regular", [0, 255, 0], [0, 0, 0]);
+
+    screen = CGL.Framebuffer.Screen(cgl);
+
+    mat = CGL.Material("gol")
+      ..SetUniform(CGL.uTexture, fb.colorTexture)
+      ..SetUniform(CGL.uColor, VM.Vector3(0.1, 0.0, 0.0));
   }
+
+  void Draw(CGL.ChronosGL cgl, CGL.Perspective perspective) {
+    if (count % 3 == 0) {
+      gol.Step(false, null);
+    }
+    ++count;
+    fb.Activate(CGL.GL_CLEAR_ALL, 0, 0, kHeight * 4, kWidth * 4);
+    gol.DrawToScreen();
+    screen.Activate(CGL.GL_CLEAR_ALL, 0, 0, w, h);
+    program.Draw(mesh, [perspective, dummyMat, mat]);
+  }
+
+  int count = 0;
+  CGL.Framebuffer fb;
+  int w, h;
+  GOL.Life gol;
+  CGL.Framebuffer screen;
 }
 
 class SceneSketch extends Scene {
@@ -321,7 +348,8 @@ void main() {
   final Scene insidePlasma = Scene.InsidePlasma(cgl, torusWF);
   final Scene insideWireframe = Scene.InsideWireframe(cgl, torusWF);
   final Scene insideWireframeHex = Scene.InsideWireframe(cgl, torusWFeHex);
-  final Scene insideGOL = SceneGOL(cgl, floorplan);
+  final Scene insideGOL =
+      SceneGOL(cgl, canvas.clientWidth, canvas.clientHeight);
   final Scene outsideSketch =
       SceneSketch(cgl, rng, canvas.clientWidth, canvas.clientHeight, buildings);
   LogInfo("creating scenes done");

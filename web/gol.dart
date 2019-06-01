@@ -108,9 +108,9 @@ void main() {
   ]);
 
 void set(Uint8List l, int p, int mul, List<int> color) {
-  l[p * 4 + 0] = mul * color[0] ~/ 256;
-  l[p * 4 + 1] = mul * color[1] ~/ 256;
-  l[p * 4 + 2] = mul * color[2] ~/ 256;
+  l[p * 4 + 0] = mul * color[0] ~/ 255;
+  l[p * 4 + 1] = mul * color[1] ~/ 255;
+  l[p * 4 + 2] = mul * color[2] ~/ 255;
   l[p * 4 + 3] = 255;
 }
 
