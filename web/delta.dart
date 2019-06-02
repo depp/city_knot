@@ -212,18 +212,22 @@ class Scene {
     mesh = CGL.GeometryBuilderToMeshData("wf", program, torus);
   }
 
-  Scene.InsideFractal(CGL.ChronosGL cgl) {
+  Scene.InsideFractal(CGL.ChronosGL cgl, int w, int h) {
     program = CGL.RenderProgram(
         "fractal", cgl, FRACTAL.VertexShader, FRACTAL.FragmentShader);
     mesh = CGL.ShapeQuad(program, 1);
-    mat = CGL.Material("fractal");
+    if (0 == 1) {
+      mat = CGL.Material("fractal");
+      return;
+    }
 
-    /*
-    CGL.Framebuffer fb = CGL.Framebuffer.Default(cgl, kHeight * 4, kWidth * 4);
-    CGL.RenderProgram programTexture = CGL.RenderProgram(
-        "fractal", cgl, FRACTAL.VertexShader, FRACTAL.FragmentShader);
+    int tw = 4 * 1024;
+    int th = 4 * 1024;
+    CGL.Framebuffer fb = CGL.Framebuffer.Default(cgl, tw, th);
+    fb.Activate(CGL.GL_CLEAR_ALL, 0, 0, tw, th);
+    program.Draw(mesh, [dummyMat]);
 
-    mat = CGL.Material("gtactal")
+    mat = CGL.Material("fractal")
       ..SetUniform(CGL.uTexture, fb.colorTexture)
       ..SetUniform(CGL.uColor, VM.Vector3(0.1, 0.0, 0.0));
 
@@ -233,7 +237,9 @@ class Scene {
     CGL.GeometryBuilder torus = InsideTorusKTexture(kHeight ~/ 8, kWidth ~/ 8);
 
     mesh = CGL.GeometryBuilderToMeshData("fractal", program, torus);
-    */
+
+    // switch back to default screen
+    CGL.Framebuffer.Screen(cgl).Activate(CGL.GL_CLEAR_ALL, 0, 0, w, h);
   }
 
   void Draw(CGL.ChronosGL cgl, CGL.Perspective perspective) {
@@ -357,9 +363,9 @@ void main() {
   final Floorplan floorplan = Floorplan(kHeight, kWidth, 10, rng);
 
   // Geometries
-
   final CGL.GeometryBuilder torus = TorusKnot(kHeight, kWidth);
   final CGL.GeometryBuilder buildings = MakeBuildings(floorplan, torus);
+
   final CGL.GeometryBuilder torusWF =
       InsideTorusKnotWireframe(kHeight ~/ 8, kWidth ~/ 8);
   final torusWFeHex = TorusKnotWireframeHexagons(kHeight ~/ 8, kWidth ~/ 8);
@@ -371,14 +377,16 @@ void main() {
       Scene.OutsideWireframeBuildings(cgl, buildings);
   final Scene outsideNightBuildings =
       Scene.OutsideNightBuildings(cgl, buildings);
+  final Scene outsideSketch =
+      SceneSketch(cgl, rng, canvas.clientWidth, canvas.clientHeight, buildings);
   final Scene insidePlasma = Scene.InsidePlasma(cgl, torusWF);
   final Scene insideWireframe = Scene.InsideWireframe(cgl, torusWF);
   final Scene insideWireframeHex = Scene.InsideWireframe(cgl, torusWFeHex);
   final Scene insideGOL =
       SceneGOL(cgl, canvas.clientWidth, canvas.clientHeight);
-  final Scene insideFractal = Scene.InsideFractal(cgl);
-  final Scene outsideSketch =
-      SceneSketch(cgl, rng, canvas.clientWidth, canvas.clientHeight, buildings);
+  final Scene insideFractal =
+      Scene.InsideFractal(cgl, canvas.clientWidth, canvas.clientHeight);
+
   LogInfo("creating scenes done");
 
   double zeroTimeMs = 0.0;
