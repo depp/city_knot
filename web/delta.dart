@@ -216,7 +216,7 @@ class Scene {
     program = CGL.RenderProgram(
         "fractal", cgl, FRACTAL.VertexShader, FRACTAL.FragmentShader);
     mesh = CGL.ShapeQuad(program, 1);
-    if (0 == 1) {
+    if (1 == 1) {
       mat = CGL.Material("fractal");
       return;
     }
@@ -255,7 +255,6 @@ class Scene {
 
 class SceneGOL extends Scene {
   SceneGOL(CGL.ChronosGL cgl, this.w, this.h) {
-    Math.Random rng = Math.Random();
     CGL.GeometryBuilder torus = InsideTorusKTexture(kHeight ~/ 8, kWidth ~/ 8);
     program = CGL.RenderProgram(
         "gol", cgl, texturedVertexShader, texturedFragmentShader);
@@ -263,15 +262,31 @@ class SceneGOL extends Scene {
 
     fb = CGL.Framebuffer.Default(cgl, kHeight * 4, kWidth * 4);
     gol = GOL.Life(cgl, kHeight, kWidth, 4, true);
-    gol.SetRandom(rng, 10);
-    gol.SetRules(rng, "23/3");
-    gol.SetPalette("Regular", [0, 255, 0], [0, 0, 0]);
 
     screen = CGL.Framebuffer.Screen(cgl);
 
     mat = CGL.Material("gol")
       ..SetUniform(CGL.uTexture, fb.colorTexture)
       ..SetUniform(CGL.uColor, VM.Vector3(0.1, 0.0, 0.0));
+  }
+
+  factory SceneGOL.Variant1(CGL.ChronosGL cgl, int w, int h, Math.Random rng) {
+    var res = SceneGOL(cgl, w, h);
+    res.gol
+      ..SetRandom(rng, 10)
+      ..SetRules(rng, "23/3")
+      ..SetPalette("Regular", [0, 255, 0], [0, 0, 0]);
+    return res;
+  }
+
+  factory SceneGOL.Variant2(CGL.ChronosGL cgl, int w, int h, Math.Random rng) {
+    var res = SceneGOL(cgl, w, h);
+    res.gol
+      ..SetRandom(rng, 35)
+      ..SetRules(rng, "45678/3")
+      ..SetPalette("Blur", [255, 0, 0], [0, 0, 128]);
+    for (int i = 0; i < 100; ++i) res.gol.Step(false, rng);
+    return res;
   }
 
   void Draw(CGL.ChronosGL cgl, CGL.Perspective perspective) {
@@ -331,6 +346,123 @@ class SceneSketch extends Scene {
   CGL.Framebuffer screen;
 }
 
+class AllScenes {
+  AllScenes(CGL.ChronosGL cgl, Math.Random rng, int w, int h) {
+    // Building Scenes
+    LogInfo("creating building scenes");
+
+    final Floorplan floorplan = Floorplan(kHeight, kWidth, 10, rng);
+    final CGL.GeometryBuilder torus = TorusKnot(kHeight, kWidth);
+    final CGL.GeometryBuilder buildings = MakeBuildings(floorplan, torus);
+
+    outsideSteet = Scene.OutsideStreet(cgl, floorplan, torus);
+    outsideWireframeBuildings = Scene.OutsideWireframeBuildings(cgl, buildings);
+    outsideNightBuildings = Scene.OutsideNightBuildings(cgl, buildings);
+    outsideSketch = SceneSketch(cgl, rng, w, h, buildings);
+    LogInfo("creating buildingcenes done");
+
+    // Fast Startup
+    /*
+    final Scene outsideSteet = Scene();
+    final Scene outsideWireframeBuildings = Scene();
+    final Scene outsideNightBuildings = Scene();
+    final Scene outsideSketch = Scene();
+     */
+
+    // Other Scenes
+    LogInfo("creating other scenes");
+    final CGL.GeometryBuilder torusWF =
+        InsideTorusKnotWireframe(kHeight ~/ 8, kWidth ~/ 8);
+    final torusWFeHex = TorusKnotWireframeHexagons(kHeight ~/ 8, kWidth ~/ 8);
+
+    insidePlasma = Scene.InsidePlasma(cgl, torusWF);
+    insideWireframe = Scene.InsideWireframe(cgl, torusWF);
+    insideWireframeHex = Scene.InsideWireframe(cgl, torusWFeHex);
+    insideGOL1 = SceneGOL.Variant1(cgl, w, h, rng);
+    insideGOL2 = SceneGOL.Variant2(cgl, w, h, rng);
+    insideFractal = Scene.InsideFractal(cgl, w, h);
+
+    LogInfo("creating other scenes done");
+  }
+
+  Scene outsideSteet;
+  Scene outsideWireframeBuildings;
+  Scene outsideNightBuildings;
+  Scene outsideSketch;
+
+  Scene insidePlasma;
+  Scene insideWireframe;
+  Scene insideWireframeHex;
+  Scene insideGOL1;
+  Scene insideGOL2;
+  Scene insideFractal;
+
+  void RenderScene(String name, CGL.ChronosGL cgl, CGL.Perspective perspective,
+      double timeMs, TorusKnotCamera tkc) {
+    if (name == "wireframe-inside-varying-width" ||
+        name == "wireframe-inside-hexagon") {
+      double alpha = Math.sin(timeMs / 2000.0) * 10.0 + 11.0;
+      insideWireframe.mat.ForceUniform(uWidth, alpha);
+      insideWireframeHex.mat.ForceUniform(uWidth, alpha);
+    } else {
+      insideWireframe.mat.ForceUniform(uWidth, 2.5);
+      insideWireframeHex.mat.ForceUniform(uWidth, 2.5);
+      //matBuilding.ForceUniform(uWidth, alpha);
+    }
+
+    insidePlasma.mat.ForceUniform(CGL.uTime, timeMs / 5000.0);
+    switch (name) {
+      case "wireframe-outside":
+      case "wireframe-orbit-far":
+        tkc.SetTubeRadius(kTubeRadius + 50.0);
+        outsideWireframeBuildings.Draw(cgl, perspective);
+        outsideSteet.Draw(cgl, perspective);
+        break;
+      case "plasma-inside":
+        tkc.SetTubeRadius(1.0);
+        outsideWireframeBuildings.Draw(cgl, perspective);
+        insidePlasma.Draw(cgl, perspective);
+        break;
+      case "wireframe-inside-hexagon":
+        tkc.SetTubeRadius(1.0);
+        outsideWireframeBuildings.Draw(cgl, perspective);
+        insideWireframeHex.Draw(cgl, perspective);
+        break;
+      case "wireframe-inside":
+      case "wireframe-inside-varying-width":
+        tkc.SetTubeRadius(1.0);
+        outsideWireframeBuildings.Draw(cgl, perspective);
+        insideWireframe.Draw(cgl, perspective);
+        break;
+      case "gol-inside":
+        tkc.SetTubeRadius(1.0);
+        insideGOL1.Draw(cgl, perspective);
+        break;
+      case "gol2-inside":
+        tkc.SetTubeRadius(1.0);
+        insideGOL2.Draw(cgl, perspective);
+        break;
+      case "fractal-inside":
+        tkc.SetTubeRadius(1.0);
+        insideFractal.Draw(cgl, perspective);
+        break;
+      case "sketch-outside":
+        tkc.SetTubeRadius(kTubeRadius + 50.0);
+        outsideSketch.Draw(cgl, perspective);
+        outsideSteet.Draw(cgl, perspective);
+        break;
+      case "night-outside":
+      case "night-orbit-near":
+        tkc.SetTubeRadius(kTubeRadius + 50.0);
+        outsideNightBuildings.Draw(cgl, perspective);
+        outsideSteet.Draw(cgl, perspective);
+        break;
+      default:
+        assert(false, "unexepected theme ${gTheme.value}");
+    }
+  }
+}
+
 void main() {
   final CGL.StatsFps fps =
       CGL.StatsFps(HTML.document.getElementById("stats"), "blue", "gray");
@@ -360,35 +492,8 @@ void main() {
 
   final Math.Random rng = Math.Random(0);
 
-  final Floorplan floorplan = Floorplan(kHeight, kWidth, 10, rng);
-
-  // Geometries
-  final CGL.GeometryBuilder torus = TorusKnot(kHeight, kWidth);
-  final CGL.GeometryBuilder buildings = MakeBuildings(floorplan, torus);
-
-  final CGL.GeometryBuilder torusWF =
-      InsideTorusKnotWireframe(kHeight ~/ 8, kWidth ~/ 8);
-  final torusWFeHex = TorusKnotWireframeHexagons(kHeight ~/ 8, kWidth ~/ 8);
-
-  // Scenes
-  LogInfo("creating scenes");
-  final Scene outsideSteet = Scene.OutsideStreet(cgl, floorplan, torus);
-  final Scene outsideWireframeBuildings =
-      Scene.OutsideWireframeBuildings(cgl, buildings);
-  final Scene outsideNightBuildings =
-      Scene.OutsideNightBuildings(cgl, buildings);
-  final Scene outsideSketch =
-      SceneSketch(cgl, rng, canvas.clientWidth, canvas.clientHeight, buildings);
-  final Scene insidePlasma = Scene.InsidePlasma(cgl, torusWF);
-  final Scene insideWireframe = Scene.InsideWireframe(cgl, torusWF);
-  final Scene insideWireframeHex = Scene.InsideWireframe(cgl, torusWFeHex);
-  final Scene insideGOL =
-      SceneGOL(cgl, canvas.clientWidth, canvas.clientHeight);
-  final Scene insideFractal =
-      Scene.InsideFractal(cgl, canvas.clientWidth, canvas.clientHeight);
-
-  LogInfo("creating scenes done");
-
+  AllScenes allScenes =
+      AllScenes(cgl, rng, canvas.clientWidth, canvas.clientHeight);
   double zeroTimeMs = 0.0;
   double lastTimeMs = 0.0;
 
@@ -428,60 +533,8 @@ void main() {
       tkc.animate(timeMs - zeroTimeMs);
     }
 
-    tkc.SetTubeRadius(1.0);
-
-    if (gTheme.value == "wireframe-inside-varying-width" ||
-        gTheme.value == "wireframe-inside-hexagon") {
-      double alpha = Math.sin(timeMs / 2000.0) * 10.0 + 11.0;
-      insideWireframe.mat.ForceUniform(uWidth, alpha);
-      insideWireframeHex.mat.ForceUniform(uWidth, alpha);
-    } else {
-      insideWireframe.mat.ForceUniform(uWidth, 2.5);
-      insideWireframeHex.mat.ForceUniform(uWidth, 2.5);
-      //matBuilding.ForceUniform(uWidth, alpha);
-    }
-
-    insidePlasma.mat.ForceUniform(CGL.uTime, (timeMs - zeroTimeMs) / 5000.0);
-
-    switch (gTheme.value) {
-      case "wireframe-outside":
-      case "wireframe-orbit-far":
-        tkc.SetTubeRadius(kTubeRadius + 50.0);
-        outsideWireframeBuildings.Draw(cgl, perspective);
-        outsideSteet.Draw(cgl, perspective);
-        break;
-      case "plasma-inside":
-        outsideWireframeBuildings.Draw(cgl, perspective);
-        insidePlasma.Draw(cgl, perspective);
-        break;
-      case "wireframe-inside-hexagon":
-        outsideWireframeBuildings.Draw(cgl, perspective);
-        insideWireframeHex.Draw(cgl, perspective);
-        break;
-      case "wireframe-inside":
-      case "wireframe-inside-varying-width":
-        outsideWireframeBuildings.Draw(cgl, perspective);
-        insideWireframe.Draw(cgl, perspective);
-        break;
-      case "gol-inside":
-        insideGOL.Draw(cgl, perspective);
-        break;
-      case "fractal-inside":
-        insideFractal.Draw(cgl, perspective);
-        break;
-      case "sketch-outside":
-        tkc.SetTubeRadius(kTubeRadius + 50.0);
-        outsideSketch.Draw(cgl, perspective);
-        outsideSteet.Draw(cgl, perspective);
-        break;
-      case "night-outside":
-      default:
-        tkc.SetTubeRadius(kTubeRadius + 50.0);
-        outsideNightBuildings.Draw(cgl, perspective);
-        outsideSteet.Draw(cgl, perspective);
-        break;
-    }
-
+    allScenes.RenderScene(
+        gTheme.value, cgl, perspective, timeMs - zeroTimeMs, tkc);
     gClock.text = DurationFormat(timeMs - zeroTimeMs);
     HTML.window.animationFrame.then(animate);
     fps.UpdateFrameCount(lastTimeMs);
