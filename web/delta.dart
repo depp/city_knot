@@ -5,6 +5,7 @@ import 'package:chronosgl/chronosgl.dart' as CGL;
 import 'package:vector_math/vector_math.dart' as VM;
 
 import 'floorplan.dart';
+import 'fractal.dart' as FRACTAL;
 import 'gol.dart' as GOL;
 import 'logging.dart';
 import 'meshes.dart';
@@ -211,6 +212,30 @@ class Scene {
     mesh = CGL.GeometryBuilderToMeshData("wf", program, torus);
   }
 
+  Scene.InsideFractal(CGL.ChronosGL cgl) {
+    program = CGL.RenderProgram(
+        "fractal", cgl, FRACTAL.VertexShader, FRACTAL.FragmentShader);
+    mesh = CGL.ShapeQuad(program, 1);
+    mat = CGL.Material("fractal");
+
+    /*
+    CGL.Framebuffer fb = CGL.Framebuffer.Default(cgl, kHeight * 4, kWidth * 4);
+    CGL.RenderProgram programTexture = CGL.RenderProgram(
+        "fractal", cgl, FRACTAL.VertexShader, FRACTAL.FragmentShader);
+
+    mat = CGL.Material("gtactal")
+      ..SetUniform(CGL.uTexture, fb.colorTexture)
+      ..SetUniform(CGL.uColor, VM.Vector3(0.1, 0.0, 0.0));
+
+    program = CGL.RenderProgram(
+        "fractal", cgl, texturedVertexShader, texturedFragmentShader);
+
+    CGL.GeometryBuilder torus = InsideTorusKTexture(kHeight ~/ 8, kWidth ~/ 8);
+
+    mesh = CGL.GeometryBuilderToMeshData("fractal", program, torus);
+    */
+  }
+
   void Draw(CGL.ChronosGL cgl, CGL.Perspective perspective) {
     program.Draw(mesh, [perspective, dummyMat, mat]);
   }
@@ -308,6 +333,7 @@ void main() {
 
   IntroduceShaderVars();
   GOL.RegisterShaderVars();
+  FRACTAL.RegisterShaderVars();
 
   final HTML.CanvasElement canvas =
       HTML.document.querySelector('#webgl-canvas');
@@ -350,6 +376,7 @@ void main() {
   final Scene insideWireframeHex = Scene.InsideWireframe(cgl, torusWFeHex);
   final Scene insideGOL =
       SceneGOL(cgl, canvas.clientWidth, canvas.clientHeight);
+  final Scene insideFractal = Scene.InsideFractal(cgl);
   final Scene outsideSketch =
       SceneSketch(cgl, rng, canvas.clientWidth, canvas.clientHeight, buildings);
   LogInfo("creating scenes done");
@@ -430,6 +457,9 @@ void main() {
         break;
       case "gol-inside":
         insideGOL.Draw(cgl, perspective);
+        break;
+      case "fractal-inside":
+        insideFractal.Draw(cgl, perspective);
         break;
       case "sketch-outside":
         tkc.SetTubeRadius(kTubeRadius + 50.0);
