@@ -59,8 +59,8 @@ void buildPlaneVectors(
     ..normalize();
 }
 
-VM.Vector3 getRoute(VM.Vector3 v1, VM.Vector3 v2) {
-  switch (gCameraRoute.value) {
+VM.Vector3 getRoute(VM.Vector3 v1, VM.Vector3 v2, String route) {
+  switch (route) {
     case "0":
       return v1;
     case "3":
@@ -90,12 +90,17 @@ class TorusKnotCamera extends CGL.Spatial {
   final double heightScale;
   final double _TorusEpsilon = 0.01;
 
+  // point inside/on torus
   final VM.Vector3 point = VM.Vector3.zero();
+  // point inside/on torus slightly ahead
   final VM.Vector3 target = VM.Vector3.zero();
-
+  // tangent (target - point)
   final VM.Vector3 tangent = VM.Vector3.zero();
+  // tangent plane
+  final VM.Vector3 v1 = VM.Vector3.zero();
+  final VM.Vector3 v2 = VM.Vector3.zero();
 
-  void animate(double timeMs) {
+  void animate(double timeMs, String route) {
     double u = timeMs / 6000;
     CGL.TorusKnotGetPos(u, q, p, radius, heightScale, point);
     //p1.scale((p1.length + kTubeRadius * 1.1) / p1.length);
@@ -105,11 +110,8 @@ class TorusKnotCamera extends CGL.Spatial {
       ..setFrom(target)
       ..sub(point);
 
-    VM.Vector3 v1 = VM.Vector3.zero();
-
-    VM.Vector3 v2 = VM.Vector3.zero();
     buildPlaneVectors(tangent, v1, v2);
-    VM.Vector3 offset = getRoute(v1, v2);
+    VM.Vector3 offset = getRoute(v1, v2, route);
     offset.scale(this._tubeRadius);
 
     //offset.scale(-1.0);
@@ -128,7 +130,7 @@ class TorusKnotCamera extends CGL.Spatial {
 class InitialApproachCamera extends CGL.Spatial {
   InitialApproachCamera() : super("camera:orbit");
 
-  final VM.Vector3 cameraIntroStartPoint = VM.Vector3(60.0, -70.0, 150.0);
+  final VM.Vector3 cameraIntroStartPoint = VM.Vector3(60.0, -70.0, -150.0);
   final VM.Vector3 cameraIntroEndPoint = VM.Vector3.zero();
   double radius = 1.0;
   double azimuth = 0.0;
@@ -137,7 +139,7 @@ class InitialApproachCamera extends CGL.Spatial {
 
   void animate(double timeMs) {
     // azimuth += 0.03;
-    azimuth = timeMs * 0.0001;
+    azimuth = Math.pi + timeMs * 0.0001;
     azimuth = azimuth % (2.0 * Math.pi);
     polar = polar.clamp(-Math.pi / 2 + 0.1, Math.pi / 2 - 0.1);
     double r = radius - timeMs * 0.1;
@@ -251,6 +253,7 @@ class Scene {
   CGL.Material mat;
   CGL.RenderProgram program;
   CGL.MeshData mesh;
+
   final CGL.Material dummyMat = CGL.Material("")
     ..SetUniform(CGL.uModelMatrix, VM.Matrix4.identity());
 }
@@ -403,16 +406,16 @@ class AllScenes {
   void UpdateCameras(String name, CGL.Perspective perspective, double timeMs,
       TorusKnotCamera tkc, InitialApproachCamera iac) {
     iac.animate(timeMs);
-    tkc.animate(timeMs);
+    tkc.animate(timeMs, gCameraRoute.value);
 
     switch (name) {
-      case "wireframe-orbit-far":
+      case "wireframe-orbit":
         perspective.UpdateCamera(iac);
         iac.radius = kRadius * 6.0;
         break;
-      case "night-orbit-near":
+      case "night-orbit":
         perspective.UpdateCamera(iac);
-        iac.radius = kRadius * 4.0;
+        iac.radius = kRadius * 6.0;
         break;
       case "wireframe-outside":
       case "night-outside":
@@ -451,7 +454,7 @@ class AllScenes {
     insidePlasma.mat.ForceUniform(CGL.uTime, timeMs / 5000.0);
     switch (name) {
       case "wireframe-outside":
-      case "wireframe-orbit-far":
+      case "wireframe-orbit":
         outsideWireframeBuildings.Draw(cgl, perspective);
         outsideSteet.Draw(cgl, perspective);
         break;
@@ -482,7 +485,7 @@ class AllScenes {
         outsideSteet.Draw(cgl, perspective);
         break;
       case "night-outside":
-      case "night-orbit-near":
+      case "night-orbit":
         outsideNightBuildings.Draw(cgl, perspective);
         outsideSteet.Draw(cgl, perspective);
         break;
@@ -540,6 +543,18 @@ void main() {
 
   final Math.Random rng = Math.Random(0);
 
+  final CGL.RenderProgram sphereProgram = CGL.RenderProgram(
+      "gol", cgl, CGL.solidColorVertexShader, CGL.solidColorFragmentShader);
+
+  final CGL.MeshData sphere = Sphere(sphereProgram, 200.0);
+  VM.Matrix4 spehereTransform = VM.Matrix4.identity();
+  final CGL.Material sphereMat = CGL.Material("sphere")
+    ..SetUniform(CGL.uColor, VM.Vector3(1.0, 1.0, 1.0))
+    ..SetUniform(CGL.uModelMatrix, spehereTransform);
+  tkc.SetTubeRadius(kTubeRadius + 100.0);
+  tkc.animate(0, "9");
+  spehereTransform.setTranslation(tkc.point);
+
   AllScenes allScenes =
       AllScenes(cgl, rng, canvas.clientWidth, canvas.clientHeight);
   double zeroTimeMs = 0.0;
@@ -550,8 +565,6 @@ void main() {
   void animate(num timeMs) {
     double elapsed = timeMs - lastTimeMs;
     lastTimeMs = timeMs + 0.0;
-
-    tkc.animate(lastTimeMs * 0.5);
 
     if (gTheme.value != lastTheme) {
       zeroTimeMs = timeMs;
@@ -564,6 +577,8 @@ void main() {
       perspective.UpdateCamera(oc);
       // allow the camera to also reflect mouse movement.
       oc.animate(elapsed);
+      allScenes.RenderScene(gTheme.value, cgl, perspective, t);
+      sphereProgram.Draw(sphere, [sphereMat, perspective]);
     } else if (gTheme.value == "demo") {
       final double tMusic = 1000.0 * gMusic.currentTime;
       // also check gMusic.ended
@@ -579,6 +594,7 @@ void main() {
       }
     } else {
       allScenes.UpdateCameras(gTheme.value, perspective, t, tkc, iac);
+      sphereProgram.Draw(sphere, [sphereMat, perspective]);
       allScenes.RenderScene(gTheme.value, cgl, perspective, t);
     }
 
