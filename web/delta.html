@@ -49,6 +49,9 @@
 
 
 
+
+
+
     </script>
 
 </head>
@@ -65,27 +68,21 @@
     </select>Route
 
     <select id="theme">
-        <option>gol2-inside</option>
-        <option>demo</option>
-
         <optgroup label="outside">
             <option>sketch-outside</option>
             <option>night-outside</option>
             <option>wireframe-outside</option>
         </optgroup>
         <optgroup label="inside">
-            <option>plasma-inside</option>
             <option>gol-inside</option>
             <option>gol2-inside</option>
-            <option>fractal-inside</option>
-            <option>wireframe-inside</option>
-            <option>wireframe-inside-hexagon</option>
-            <option>wireframe-inside-varying-width</option>
         </optgroup>
+
         <optgroup label="camera movements">
             <option>wireframe-orbit-far</option>
             <option>night-orbit-near</option>
         </optgroup>
+
         <optgroup label="proposed script">
             <option>night-orbit-near</option>
             <option>night-outside</option>
@@ -96,9 +93,19 @@
             <option>sketch-outside</option>
             <option>unknown-finale</option>
         </optgroup>
+
+        <optgroup label="backup (mostly inside)">
+            <option>plasma-inside</option>
+            <option>fractal-inside</option>
+            <option>wireframe-inside</option>
+            <option>wireframe-inside-hexagon</option>
+            <option>wireframe-inside-varying-width</option>
+            <option>demo</option>
+        </optgroup>
     </select>Theme
 
-    <button id="music">Play Music</button>
+    <button id="demo">Start Demo</button>
+    <button id="music">Play Midi Music</button>
     <tt id="clock"></tt>
 </div>
 
@@ -106,6 +113,7 @@
     <div id="stats"></div>
 </div>
 
+<audio id='soundtrack' tabindex="0" src="sound.ogg" preload="true"></audio>
 <canvas id="webgl-canvas" style="border: none; cursor:crosshair; width:100%; height: 100%"></canvas>
 <script defer src="delta.dart.js"></script>
 

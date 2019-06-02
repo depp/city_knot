@@ -24,6 +24,8 @@ final HTML.SelectElement gTheme =
 
 final HTML.Element gClock = HTML.document.querySelector('#clock');
 
+final HTML.AudioElement gMusic = HTML.document.getElementById("soundtrack");
+
 Map<String, String> HashParameters() {
   final Map<String, String> out = {};
 
@@ -383,6 +385,7 @@ class AllScenes {
     insideFractal = Scene.InsideFractal(cgl, w, h);
 
     LogInfo("creating other scenes done");
+    CGL.Framebuffer.Screen(cgl).Activate(CGL.GL_CLEAR_ALL, 0, 0, w, h);
   }
 
   Scene outsideSteet;
@@ -397,8 +400,43 @@ class AllScenes {
   Scene insideGOL2;
   Scene insideFractal;
 
+  void UpdateCameras(String name, CGL.Perspective perspective, double timeMs,
+      TorusKnotCamera tkc, InitialApproachCamera iac) {
+    iac.animate(timeMs);
+    tkc.animate(timeMs);
+
+    switch (name) {
+      case "wireframe-orbit-far":
+        perspective.UpdateCamera(iac);
+        iac.radius = kRadius * 6.0;
+        break;
+      case "night-orbit-near":
+        perspective.UpdateCamera(iac);
+        iac.radius = kRadius * 4.0;
+        break;
+      case "wireframe-outside":
+      case "night-outside":
+      case "sketch-outside":
+        tkc.SetTubeRadius(kTubeRadius + 50.0);
+        perspective.UpdateCamera(tkc);
+        break;
+      case "plasma-inside":
+      case "wireframe-inside-hexagon":
+      case "wireframe-inside":
+      case "wireframe-inside-varying-width":
+      case "gol-inside":
+      case "gol2-inside":
+      case "fractal-inside":
+        tkc.SetTubeRadius(1.0);
+        perspective.UpdateCamera(tkc);
+        break;
+      default:
+        assert(false, "unexepected theme ${name}");
+    }
+  }
+
   void RenderScene(String name, CGL.ChronosGL cgl, CGL.Perspective perspective,
-      double timeMs, TorusKnotCamera tkc) {
+      double timeMs) {
     if (name == "wireframe-inside-varying-width" ||
         name == "wireframe-inside-hexagon") {
       double alpha = Math.sin(timeMs / 2000.0) * 10.0 + 11.0;
@@ -414,54 +452,64 @@ class AllScenes {
     switch (name) {
       case "wireframe-outside":
       case "wireframe-orbit-far":
-        tkc.SetTubeRadius(kTubeRadius + 50.0);
         outsideWireframeBuildings.Draw(cgl, perspective);
         outsideSteet.Draw(cgl, perspective);
         break;
       case "plasma-inside":
-        tkc.SetTubeRadius(1.0);
         outsideWireframeBuildings.Draw(cgl, perspective);
         insidePlasma.Draw(cgl, perspective);
         break;
       case "wireframe-inside-hexagon":
-        tkc.SetTubeRadius(1.0);
         outsideWireframeBuildings.Draw(cgl, perspective);
         insideWireframeHex.Draw(cgl, perspective);
         break;
       case "wireframe-inside":
       case "wireframe-inside-varying-width":
-        tkc.SetTubeRadius(1.0);
         outsideWireframeBuildings.Draw(cgl, perspective);
         insideWireframe.Draw(cgl, perspective);
         break;
       case "gol-inside":
-        tkc.SetTubeRadius(1.0);
         insideGOL1.Draw(cgl, perspective);
         break;
       case "gol2-inside":
-        tkc.SetTubeRadius(1.0);
         insideGOL2.Draw(cgl, perspective);
         break;
       case "fractal-inside":
-        tkc.SetTubeRadius(1.0);
         insideFractal.Draw(cgl, perspective);
         break;
       case "sketch-outside":
-        tkc.SetTubeRadius(kTubeRadius + 50.0);
         outsideSketch.Draw(cgl, perspective);
         outsideSteet.Draw(cgl, perspective);
         break;
       case "night-outside":
       case "night-orbit-near":
-        tkc.SetTubeRadius(kTubeRadius + 50.0);
         outsideNightBuildings.Draw(cgl, perspective);
         outsideSteet.Draw(cgl, perspective);
         break;
       default:
-        assert(false, "unexepected theme ${gTheme.value}");
+        assert(false, "unexepected theme ${name}");
     }
   }
 }
+
+class ScriptScene {
+  ScriptScene(this.name, this.durationMs, this.route);
+
+  final String name;
+  final double durationMs;
+  final int route;
+}
+
+double kTimeUnit = 1000;
+
+final List<ScriptScene> gScript = [
+  ScriptScene("night-orbit-near", 25.0 * kTimeUnit, 0),
+  ScriptScene("night-outside", 25.0 * kTimeUnit, 0),
+  ScriptScene("gol-inside", 20.0 * kTimeUnit, 6),
+  ScriptScene("wireframe-outside", 25.0 * kTimeUnit, 3),
+  ScriptScene("gol2-inside", 20.0 * kTimeUnit, 6),
+  ScriptScene("sketch-outside", 25.0 * kTimeUnit, 9),
+];
 
 void main() {
   final CGL.StatsFps fps =
@@ -510,40 +558,50 @@ void main() {
       iac.azimuth = 0.0;
       lastTheme = gTheme.value;
     }
-    //updateTorusTexture(timeMs / 1000, canvas2d);
+
+    final double t = timeMs - zeroTimeMs;
     if (gManualCamera.checked) {
       perspective.UpdateCamera(oc);
       // allow the camera to also reflect mouse movement.
       oc.animate(elapsed);
-    } else {
-      switch (gTheme.value) {
-        case "wireframe-orbit-far":
-          perspective.UpdateCamera(iac);
-          iac.radius = kRadius * 6.0;
+    } else if (gTheme.value == "demo") {
+      final double tMusic = 1000.0 * gMusic.currentTime;
+      // also check gMusic.ended
+      double acc = 0;
+      for (ScriptScene s in gScript) {
+        acc += s.durationMs;
+        if (tMusic < acc) {
+          gCameraRoute.selectedIndex = s.route ~/ 3;
+          allScenes.UpdateCameras(s.name, perspective, tMusic, tkc, iac);
+          allScenes.RenderScene(s.name, cgl, perspective, tMusic);
           break;
-        case "night-orbit-near":
-          perspective.UpdateCamera(iac);
-          iac.radius = kRadius * 3.0;
-          break;
-        default:
-          perspective.UpdateCamera(tkc);
+        }
       }
-      oc.animate(elapsed);
-      iac.animate(timeMs - zeroTimeMs);
-      tkc.animate(timeMs - zeroTimeMs);
+    } else {
+      allScenes.UpdateCameras(gTheme.value, perspective, t, tkc, iac);
+      allScenes.RenderScene(gTheme.value, cgl, perspective, t);
     }
 
-    allScenes.RenderScene(
-        gTheme.value, cgl, perspective, timeMs - zeroTimeMs, tkc);
-    gClock.text = DurationFormat(timeMs - zeroTimeMs);
+    gClock.text = DurationFormat(t);
     HTML.window.animationFrame.then(animate);
     fps.UpdateFrameCount(lastTimeMs);
   }
 
+  // play midi song via mondrianjs
   HTML.document.querySelector('#music').onClick.listen((HTML.Event ev) {
     ev.preventDefault();
     ev.stopPropagation();
     playSong();
+    return false;
+  });
+
+  // start demo
+  HTML.document.querySelector('#demo').onClick.listen((HTML.Event ev) {
+    ev.preventDefault();
+    ev.stopPropagation();
+    gMusic.play();
+    // last is demo
+    gTheme.selectedIndex = gTheme.options.length - 1;
     return false;
   });
 
