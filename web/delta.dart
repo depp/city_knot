@@ -179,7 +179,6 @@ class InitialApproachCamera extends CGL.Spatial {
 
   void animate(double timeMs) {
     range = (transform.getTranslation() - ci.tdst).length;
-    gStatus.text = "range: ${range.floor()}";
 
     if (timeMs >= 20000) {
       if (lastTime < 20000) {

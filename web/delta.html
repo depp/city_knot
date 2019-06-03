@@ -46,6 +46,8 @@
 
 
 
+
+
     </script>
 
 </head>
@@ -99,8 +101,8 @@
 
     Scene Time <tt id="clock"></tt>
     <tt id="status"></tt>
-    <button id="music">Play Midi Music</button>
-
+    <br>
+    <audio controls id='soundtrack' src="sound.ogg" preload="true"></audio>
     <br>
     Mode
     <select id="mode">
@@ -108,15 +110,18 @@
         <option>manual-camera</option>
         <option>demo</option>
     </select>
-
-
+    <pre>
+ development mode: manual scene
+ manual-camera:    manual scene + camera
+ demo:             scene synced to music
+    </pre>
 </div>
 
 <div style="position: absolute; color: white; top:0; right:0">
+    <button id="music">Play Midi Music</button>
     <div id="stats"></div>
 </div>
 
-<audio id='soundtrack' tabindex="0" src="sound.ogg" preload="true"></audio>
 <canvas id="webgl-canvas" style="border: none; cursor:crosshair; width:100%; height: 100%"></canvas>
 <script defer src="delta.dart.js"></script>
 
