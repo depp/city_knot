@@ -13,8 +13,8 @@ import 'mondrianjs.dart';
 import 'shaders.dart';
 import 'textures.dart';
 
-final HTML.InputElement gManualCamera =
-    HTML.document.querySelector('#manualcam') as HTML.InputElement;
+final HTML.SelectElement gMode =
+    HTML.document.querySelector('#mode') as HTML.SelectElement;
 
 final HTML.SelectElement gCameraRoute =
     HTML.document.querySelector('#routecam') as HTML.SelectElement;
@@ -602,6 +602,8 @@ void main() {
   final CGL.RenderProgram sphereProgram = CGL.RenderProgram(
       "gol", cgl, CGL.solidColorVertexShader, CGL.solidColorFragmentShader);
 
+  // The sphere is used to make important places and will
+  // not be shown in the demo
   final CGL.MeshData sphere = Sphere(sphereProgram, 100.0);
   VM.Matrix4 spehereTransform = VM.Matrix4.identity();
   final CGL.Material sphereMat = CGL.Material("sphere")
@@ -632,26 +634,30 @@ void main() {
       lastTheme = gTheme.value;
     }
 
-    final double t = timeMs - zeroTimeMs;
-    if (gManualCamera.checked) {
+    double t = timeMs - zeroTimeMs;
+    if (gMode.value == "manual-camera") {
       perspective.UpdateCamera(oc);
       // allow the camera to also reflect mouse movement.
       oc.animate(elapsed);
       allScenes.RenderScene(gTheme.value, cgl, perspective, t);
       sphereProgram.Draw(sphere, [sphereMat, perspective]);
-    } else if (gTheme.value == "demo") {
-      final double tMusic = 1000.0 * gMusic.currentTime;
-      // also check gMusic.ended
-      double acc = 0;
-      for (ScriptScene s in gScript) {
-        if (tMusic < acc + s.durationMs) {
-          gCameraRoute.selectedIndex = s.route ~/ 3;
-          allScenes.UpdateCameras(s.name, perspective, tMusic - acc, tkc, iac);
-          allScenes.RenderScene(s.name, cgl, perspective, tMusic - acc);
-          break;
+    } else if (gMode.value == "demo") {
+      if (gMusic.ended || gMusic.currentTime == 0.0) {
+        print("Music started ${gMusic.ended} ${gMusic.currentTime}");
+        gMusic.play();
+      } else {
+        t = 1000.0 * gMusic.currentTime;
+        // also check gMusic.ended
+        for (ScriptScene s in gScript) {
+          if (t < s.durationMs) {
+            gCameraRoute.selectedIndex = s.route ~/ 3;
+            allScenes.UpdateCameras(s.name, perspective, t, tkc, iac);
+            allScenes.RenderScene(s.name, cgl, perspective, t);
+            gTheme.value = s.name;
+            break;
+          }
+          t -= s.durationMs;
         }
-        acc += s.durationMs;
-
       }
     } else {
       allScenes.UpdateCameras(gTheme.value, perspective, t, tkc, iac);
@@ -669,16 +675,6 @@ void main() {
     ev.preventDefault();
     ev.stopPropagation();
     playSong();
-    return false;
-  });
-
-  // start demo
-  HTML.document.querySelector('#demo').onClick.listen((HTML.Event ev) {
-    ev.preventDefault();
-    ev.stopPropagation();
-    gMusic.play();
-    // last is demo
-    gTheme.selectedIndex = gTheme.options.length - 1;
     return false;
   });
 

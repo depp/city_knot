@@ -44,21 +44,23 @@
         sequencer.startLoop();
     }
 
+
+
     </script>
 
 </head>
 
 <body marginheight="0" marginwidth="0" bgcolor="black" id="body">
 <div style="position: absolute; color: white">
-    <input type="checkbox" id="manualcam">Manual Camera
-
+    Route
     <select id="routecam">
         <option selected>0</option>
         <option>3</option>
         <option>6</option>
         <option>9</option>
-    </select>Route
+    </select>
 
+    Scene
     <select id="theme">
         <optgroup label="outside">
             <option>sketch-outside</option>
@@ -92,14 +94,22 @@
             <option>wireframe-inside</option>
             <option>wireframe-inside-hexagon</option>
             <option>wireframe-inside-varying-width</option>
-            <option>demo</option>
         </optgroup>
-    </select>Theme
+    </select>
 
-    <button id="demo">Start Demo</button>
-    <button id="music">Play Midi Music</button>
-    <tt id="clock"></tt>
+    Scene Time <tt id="clock"></tt>
     <tt id="status"></tt>
+    <button id="music">Play Midi Music</button>
+
+    <br>
+    Mode
+    <select id="mode">
+        <option>development</option>
+        <option>manual-camera</option>
+        <option>demo</option>
+    </select>
+
+
 </div>
 
 <div style="position: absolute; color: white; top:0; right:0">
