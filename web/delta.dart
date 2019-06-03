@@ -24,6 +24,8 @@ final HTML.SelectElement gTheme =
 
 final HTML.Element gClock = HTML.document.querySelector('#clock');
 
+final HTML.Element gStatus = HTML.document.querySelector('#status');
+
 final HTML.AudioElement gMusic = HTML.document.getElementById("soundtrack");
 
 Map<String, String> HashParameters() {
@@ -92,10 +94,13 @@ class TorusKnotCamera extends CGL.Spatial {
 
   // point inside/on torus
   final VM.Vector3 point = VM.Vector3.zero();
+
   // point inside/on torus slightly ahead
   final VM.Vector3 target = VM.Vector3.zero();
+
   // tangent (target - point)
   final VM.Vector3 tangent = VM.Vector3.zero();
+
   // tangent plane
   final VM.Vector3 v1 = VM.Vector3.zero();
   final VM.Vector3 v2 = VM.Vector3.zero();
@@ -127,17 +132,69 @@ class TorusKnotCamera extends CGL.Spatial {
   }
 }
 
+class CameraInterpolation {
+  VM.Quaternion qsrc = VM.Quaternion.identity();
+  VM.Vector3 tsrc = VM.Vector3.zero();
+  VM.Vector3 ssrc = VM.Vector3.zero();
+
+  VM.Quaternion qdst = VM.Quaternion.identity();
+  VM.Vector3 tdst = VM.Vector3.zero();
+  VM.Vector3 sdst = VM.Vector3.zero();
+
+  VM.Vector3 ptmp = VM.Vector3.zero();
+  VM.Quaternion qtmp = VM.Quaternion.identity();
+  VM.Matrix3 mtmp = VM.Matrix3.identity();
+
+  void setSrc(VM.Matrix4 src) {
+    src.decompose(tsrc, qsrc, ssrc);
+  }
+
+  void setDst(VM.Matrix4 dst) {
+    dst.decompose(tdst, qdst, sdst);
+  }
+
+  void setInterpolated(VM.Matrix4 m, double x) {
+    m.setFromTranslationRotationScale(
+        //
+        tsrc + (tdst - tsrc).scaled(x),
+        qsrc + (qdst - qsrc).scaled(x),
+        ssrc + (sdst - ssrc).scaled(x));
+  }
+}
+
 class InitialApproachCamera extends CGL.Spatial {
   InitialApproachCamera() : super("camera:orbit");
 
-  final VM.Vector3 cameraIntroStartPoint = VM.Vector3(60.0, -70.0, -150.0);
-  final VM.Vector3 cameraIntroEndPoint = VM.Vector3.zero();
+  CameraInterpolation ci = CameraInterpolation();
+
+  final VM.Matrix4 cameraTransitionState = null;
+  final VM.Vector3 cameraFinalPos = VM.Vector3.zero();
+  double transitionStart = 0.0;
+
+  double range = 100000.0;
   double radius = 1.0;
   double azimuth = 0.0;
   double polar = 0.0;
   final VM.Vector3 _lookAtPos = VM.Vector3.zero();
 
   void animate(double timeMs) {
+    range = (transform.getTranslation() - ci.tdst).length;
+
+    if (range < 2500.0 && transitionStart == 0.0) {
+      print("@@@@@@@@@@@@@@@@@@@ HIT IT ${range.floor()}");
+      ci.setSrc(transform);
+      transitionStart = timeMs;
+    }
+
+    if (transitionStart != 0.0) {
+      double t = (timeMs - transitionStart) / (25000.0 - transitionStart);
+      if (t > 1.0) {
+        return;
+      }
+      gStatus.text = "range: ${range.floor()} time ${t}";
+      ci.setInterpolated(transform, t);
+      return;
+    }
     // azimuth += 0.03;
     azimuth = Math.pi + timeMs * 0.0001;
     azimuth = azimuth % (2.0 * Math.pi);
@@ -146,6 +203,7 @@ class InitialApproachCamera extends CGL.Spatial {
     setPosFromSpherical(r * 2.0, azimuth, polar);
     addPosFromVec(_lookAtPos);
     lookAt(_lookAtPos);
+    gStatus.text = "range: ${range.floor()} azimuth ${azimuth}";
   }
 }
 
@@ -405,23 +463,23 @@ class AllScenes {
 
   void UpdateCameras(String name, CGL.Perspective perspective, double timeMs,
       TorusKnotCamera tkc, InitialApproachCamera iac) {
-    iac.animate(timeMs);
-    tkc.animate(timeMs, gCameraRoute.value);
-
     switch (name) {
       case "wireframe-orbit":
         perspective.UpdateCamera(iac);
         iac.radius = kRadius * 6.0;
+        iac.animate(timeMs);
         break;
       case "night-orbit":
         perspective.UpdateCamera(iac);
         iac.radius = kRadius * 6.0;
+        iac.animate(timeMs);
         break;
       case "wireframe-outside":
       case "night-outside":
       case "sketch-outside":
         tkc.SetTubeRadius(kTubeRadius + 50.0);
         perspective.UpdateCamera(tkc);
+        tkc.animate(timeMs, gCameraRoute.value);
         break;
       case "plasma-inside":
       case "wireframe-inside-hexagon":
@@ -432,6 +490,7 @@ class AllScenes {
       case "fractal-inside":
         tkc.SetTubeRadius(1.0);
         perspective.UpdateCamera(tkc);
+        tkc.animate(timeMs, gCameraRoute.value);
         break;
       default:
         assert(false, "unexepected theme ${name}");
@@ -506,12 +565,12 @@ class ScriptScene {
 double kTimeUnit = 1000;
 
 final List<ScriptScene> gScript = [
-  ScriptScene("night-orbit-near", 25.0 * kTimeUnit, 0),
-  ScriptScene("night-outside", 25.0 * kTimeUnit, 0),
+  ScriptScene("night-orbit", 25.0 * kTimeUnit, 0),
+  ScriptScene("night-outside", 25.0 * kTimeUnit, 9),
   ScriptScene("gol-inside", 20.0 * kTimeUnit, 6),
   ScriptScene("wireframe-outside", 25.0 * kTimeUnit, 3),
   ScriptScene("gol2-inside", 20.0 * kTimeUnit, 6),
-  ScriptScene("sketch-outside", 25.0 * kTimeUnit, 9),
+  ScriptScene("sketch-outside", 25.0 * kTimeUnit, 0),
 ];
 
 void main() {
@@ -546,12 +605,16 @@ void main() {
   final CGL.RenderProgram sphereProgram = CGL.RenderProgram(
       "gol", cgl, CGL.solidColorVertexShader, CGL.solidColorFragmentShader);
 
-  final CGL.MeshData sphere = Sphere(sphereProgram, 200.0);
+  final CGL.MeshData sphere = Sphere(sphereProgram, 100.0);
   VM.Matrix4 spehereTransform = VM.Matrix4.identity();
   final CGL.Material sphereMat = CGL.Material("sphere")
     ..SetUniform(CGL.uColor, VM.Vector3(1.0, 1.0, 1.0))
     ..SetUniform(CGL.uModelMatrix, spehereTransform);
-  tkc.SetTubeRadius(kTubeRadius + 100.0);
+  tkc.SetTubeRadius(kTubeRadius + 50.0);
+  tkc.animate(0, "9");
+  iac.ci.setDst(tkc.transform);
+  iac.cameraFinalPos.setFrom(tkc.point);
+  tkc.SetTubeRadius(kTubeRadius + 150.0);
   tkc.animate(0, "9");
   spehereTransform.setTranslation(tkc.point);
 
@@ -569,6 +632,7 @@ void main() {
     if (gTheme.value != lastTheme) {
       zeroTimeMs = timeMs;
       iac.azimuth = 0.0;
+      iac.transitionStart = 0.0;
       lastTheme = gTheme.value;
     }
 
@@ -584,13 +648,14 @@ void main() {
       // also check gMusic.ended
       double acc = 0;
       for (ScriptScene s in gScript) {
-        acc += s.durationMs;
-        if (tMusic < acc) {
+        if (tMusic < acc + s.durationMs) {
           gCameraRoute.selectedIndex = s.route ~/ 3;
-          allScenes.UpdateCameras(s.name, perspective, tMusic, tkc, iac);
-          allScenes.RenderScene(s.name, cgl, perspective, tMusic);
+          allScenes.UpdateCameras(s.name, perspective, tMusic - acc, tkc, iac);
+          allScenes.RenderScene(s.name, cgl, perspective, tMusic - acc);
           break;
         }
+        acc += s.durationMs;
+
       }
     } else {
       allScenes.UpdateCameras(gTheme.value, perspective, t, tkc, iac);
