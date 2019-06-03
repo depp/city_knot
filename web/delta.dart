@@ -169,41 +169,38 @@ class InitialApproachCamera extends CGL.Spatial {
 
   final VM.Matrix4 cameraTransitionState = null;
   final VM.Vector3 cameraFinalPos = VM.Vector3.zero();
-  double transitionStart = 0.0;
 
   double range = 100000.0;
   double radius = 1.0;
   double azimuth = 0.0;
   double polar = 0.0;
+  double lastTime = 0.0;
   final VM.Vector3 _lookAtPos = VM.Vector3.zero();
 
   void animate(double timeMs) {
     range = (transform.getTranslation() - ci.tdst).length;
+    gStatus.text = "range: ${range.floor()}";
 
-    if (range < 2500.0 && transitionStart == 0.0) {
-      print("@@@@@@@@@@@@@@@@@@@ HIT IT ${range.floor()}");
-      ci.setSrc(transform);
-      transitionStart = timeMs;
-    }
-
-    if (transitionStart != 0.0) {
-      double t = (timeMs - transitionStart) / (25000.0 - transitionStart);
+    if (timeMs >= 20000) {
+      if (lastTime < 20000) {
+        ci.setSrc(transform);
+      }
+      double t = (timeMs - 20000) / (25000.0 - 20000.0);
       if (t > 1.0) {
         return;
       }
-      gStatus.text = "range: ${range.floor()} time ${t}";
       ci.setInterpolated(transform, t);
-      return;
+    } else {
+      // azimuth += 0.03;
+      azimuth = Math.pi + timeMs * 0.0001;
+      azimuth = azimuth % (2.0 * Math.pi);
+      polar = polar.clamp(-Math.pi / 2 + 0.1, Math.pi / 2 - 0.1);
+      double r = radius - timeMs * 0.1;
+      setPosFromSpherical(r * 2.0, azimuth, polar);
+      addPosFromVec(_lookAtPos);
+      lookAt(_lookAtPos);
     }
-    // azimuth += 0.03;
-    azimuth = Math.pi + timeMs * 0.0001;
-    azimuth = azimuth % (2.0 * Math.pi);
-    polar = polar.clamp(-Math.pi / 2 + 0.1, Math.pi / 2 - 0.1);
-    double r = radius - timeMs * 0.1;
-    setPosFromSpherical(r * 2.0, azimuth, polar);
-    addPosFromVec(_lookAtPos);
-    lookAt(_lookAtPos);
-    gStatus.text = "range: ${range.floor()} azimuth ${azimuth}";
+    lastTime = timeMs;
   }
 }
 
@@ -632,7 +629,6 @@ void main() {
     if (gTheme.value != lastTheme) {
       zeroTimeMs = timeMs;
       iac.azimuth = 0.0;
-      iac.transitionStart = 0.0;
       lastTheme = gTheme.value;
     }
 
