@@ -10,6 +10,7 @@ import 'gol.dart' as GOL;
 import 'logging.dart';
 import 'meshes.dart';
 import 'mondrianjs.dart';
+import 'portal.dart' as PORTAL;
 import 'shaders.dart';
 import 'textures.dart';
 
@@ -27,6 +28,8 @@ final HTML.Element gClock = HTML.document.querySelector('#clock');
 final HTML.Element gStatus = HTML.document.querySelector('#status');
 
 final HTML.AudioElement gMusic = HTML.document.getElementById("soundtrack");
+
+const bool FAST_START_NO_BUILDINGS = false;
 
 Map<String, String> HashParameters() {
   final Map<String, String> out = {};
@@ -180,6 +183,7 @@ class InitialApproachCamera extends CGL.Spatial {
   void animate(double timeMs) {
     range = (transform.getTranslation() - ci.tdst).length;
 
+    // hard coded duration
     if (timeMs >= 20000) {
       if (lastTime < 20000) {
         ci.setSrc(transform);
@@ -222,6 +226,7 @@ class Scene {
   Scene.OutsideStreet(
       CGL.ChronosGL cgl, Floorplan floorplan, CGL.GeometryBuilder torus) {
     mat = CGL.Material("street")
+      ..SetUniform(CGL.uModelMatrix, VM.Matrix4.identity())
       ..SetUniform(CGL.uTexture, MakeFloorplanTexture(cgl, floorplan))
       ..SetUniform(CGL.uColor, VM.Vector3.zero());
     program = CGL.RenderProgram(
@@ -232,6 +237,7 @@ class Scene {
   Scene.OutsideWireframeBuildings(
       CGL.ChronosGL cgl, CGL.GeometryBuilder building) {
     mat = CGL.Material("wf")
+      ..SetUniform(CGL.uModelMatrix, VM.Matrix4.identity())
       ..SetUniform(uWidth, 1.5)
       ..SetUniform(CGL.uColor, VM.Vector3(1.0, 1.0, 0.0))
       ..SetUniform(CGL.uColorAlpha, VM.Vector4(1.0, 0.0, 0.0, 1.0))
@@ -244,7 +250,8 @@ class Scene {
 
   Scene.OutsideNightBuildings(
       CGL.ChronosGL cgl, CGL.GeometryBuilder buildings) {
-    mat = CGL.Material("building");
+    mat = CGL.Material("building")
+      ..SetUniform(CGL.uModelMatrix, VM.Matrix4.identity());
     program = CGL.RenderProgram(
         "building", cgl, multiColorVertexShader, multiColorFragmentShader);
     mesh = CGL.GeometryBuilderToMeshData("buildings", program, buildings);
@@ -252,6 +259,7 @@ class Scene {
 
   Scene.InsidePlasma(CGL.ChronosGL cgl, CGL.GeometryBuilder torus) {
     mat = CGL.Material("plasma")
+      ..SetUniform(CGL.uModelMatrix, VM.Matrix4.identity())
       ..ForceUniform(CGL.cBlendEquation, CGL.BlendEquationStandard);
     program = CGL.RenderProgram("plasma", cgl, CGL.perlinNoiseVertexShader,
         CGL.makePerlinNoiseColorFragmentShader(false));
@@ -260,6 +268,7 @@ class Scene {
 
   Scene.InsideWireframe(CGL.ChronosGL cgl, CGL.GeometryBuilder torus) {
     mat = CGL.Material("wf")
+      ..SetUniform(CGL.uModelMatrix, VM.Matrix4.identity())
       ..SetUniform(uWidth, 1.5)
       ..ForceUniform(CGL.cBlendEquation, CGL.BlendEquationStandard)
       ..SetUniform(CGL.uColorAlpha, VM.Vector4(0.0, 0.0, 1.0, 1.0))
@@ -268,6 +277,18 @@ class Scene {
     program = CGL.RenderProgram(
         "wf", cgl, wireframeVertexShader, wireframeFragmentShader);
     mesh = CGL.GeometryBuilderToMeshData("wf", program, torus);
+  }
+
+  Scene.Portal(CGL.ChronosGL cgl) {
+    mat = CGL.Material("portal")
+      ..SetUniform(CGL.uModelMatrix, VM.Matrix4.identity())
+      ..SetUniform(CGL.uTime, 0.0)
+      ..SetUniform(CGL.uPointSize, 400.0);
+
+    program = CGL.RenderProgram(
+        "portal", cgl, PORTAL.VertexShader, PORTAL.FragmentShader);
+
+    mesh = PORTAL.MakePortal(program);
   }
 
   Scene.InsideFractal(CGL.ChronosGL cgl, int w, int h) {
@@ -283,9 +304,12 @@ class Scene {
     int th = 4 * 1024;
     CGL.Framebuffer fb = CGL.Framebuffer.Default(cgl, tw, th);
     fb.Activate(CGL.GL_CLEAR_ALL, 0, 0, tw, th);
-    program.Draw(mesh, [dummyMat]);
 
     mat = CGL.Material("fractal")
+      ..SetUniform(CGL.uModelMatrix, VM.Matrix4.identity());
+
+    program.Draw(mesh, [mat]);
+    mat
       ..SetUniform(CGL.uTexture, fb.colorTexture)
       ..SetUniform(CGL.uColor, VM.Vector3(0.1, 0.0, 0.0));
 
@@ -301,15 +325,12 @@ class Scene {
   }
 
   void Draw(CGL.ChronosGL cgl, CGL.Perspective perspective) {
-    program.Draw(mesh, [perspective, dummyMat, mat]);
+    program.Draw(mesh, [perspective, mat]);
   }
 
   CGL.Material mat;
   CGL.RenderProgram program;
   CGL.MeshData mesh;
-
-  final CGL.Material dummyMat = CGL.Material("")
-    ..SetUniform(CGL.uModelMatrix, VM.Matrix4.identity());
 }
 
 class SceneGOL extends Scene {
@@ -325,6 +346,7 @@ class SceneGOL extends Scene {
     screen = CGL.Framebuffer.Screen(cgl);
 
     mat = CGL.Material("gol")
+      ..SetUniform(CGL.uModelMatrix, VM.Matrix4.identity())
       ..SetUniform(CGL.uTexture, fb.colorTexture)
       ..SetUniform(CGL.uColor, VM.Vector3(0.1, 0.0, 0.0));
   }
@@ -356,7 +378,7 @@ class SceneGOL extends Scene {
     fb.Activate(CGL.GL_CLEAR_ALL, 0, 0, kHeight * 4, kWidth * 4);
     gol.DrawToScreen();
     screen.Activate(CGL.GL_CLEAR_ALL, 0, 0, w, h);
-    program.Draw(mesh, [perspective, dummyMat, mat]);
+    program.Draw(mesh, [perspective, mat]);
   }
 
   int count = 0;
@@ -380,6 +402,7 @@ class SceneSketch extends Scene {
     screen = CGL.Framebuffer.Screen(cgl);
 
     mat = CGL.Material("")
+      ..SetUniform(CGL.uModelMatrix, VM.Matrix4.identity())
       ..SetUniform(CGL.uShininess, 10.0)
       ..SetUniform(CGL.uTexture2, fb.colorTexture)
       ..SetUniform(CGL.uTexture, MakeNoiseTesture(cgl, rng));
@@ -393,9 +416,9 @@ class SceneSketch extends Scene {
 
   void Draw(CGL.ChronosGL cgl, CGL.Perspective perspective) {
     fb.Activate(CGL.GL_CLEAR_ALL, 0, 0, w, h);
-    programPrep.Draw(mesh, [perspective, illumination, dummyMat, mat]);
+    programPrep.Draw(mesh, [perspective, illumination, mat]);
     screen.Activate(CGL.GL_CLEAR_ALL, 0, 0, w, h);
-    program.Draw(mesh, [perspective, illumination, dummyMat, mat]);
+    program.Draw(mesh, [perspective, illumination, mat]);
   }
 
   int w, h;
@@ -408,25 +431,26 @@ class SceneSketch extends Scene {
 class AllScenes {
   AllScenes(CGL.ChronosGL cgl, Math.Random rng, int w, int h) {
     // Building Scenes
+
     LogInfo("creating building scenes");
+    if (FAST_START_NO_BUILDINGS) {
+      LogInfo("NO BUINDINGS");
+      outsideSteet = Scene();
+      outsideWireframeBuildings = Scene();
+      outsideNightBuildings = Scene();
+      outsideSketch = Scene();
+    } else {
+      final Floorplan floorplan = Floorplan(kHeight, kWidth, 10, rng);
+      final CGL.GeometryBuilder torus = TorusKnot(kHeight, kWidth);
+      final CGL.GeometryBuilder buildings = MakeBuildings(floorplan, torus);
 
-    final Floorplan floorplan = Floorplan(kHeight, kWidth, 10, rng);
-    final CGL.GeometryBuilder torus = TorusKnot(kHeight, kWidth);
-    final CGL.GeometryBuilder buildings = MakeBuildings(floorplan, torus);
-
-    outsideSteet = Scene.OutsideStreet(cgl, floorplan, torus);
-    outsideWireframeBuildings = Scene.OutsideWireframeBuildings(cgl, buildings);
-    outsideNightBuildings = Scene.OutsideNightBuildings(cgl, buildings);
-    outsideSketch = SceneSketch(cgl, rng, w, h, buildings);
+      outsideSteet = Scene.OutsideStreet(cgl, floorplan, torus);
+      outsideWireframeBuildings =
+          Scene.OutsideWireframeBuildings(cgl, buildings);
+      outsideNightBuildings = Scene.OutsideNightBuildings(cgl, buildings);
+      outsideSketch = SceneSketch(cgl, rng, w, h, buildings);
+    }
     LogInfo("creating buildingcenes done");
-
-    // Fast Startup
-    /*
-    final Scene outsideSteet = Scene();
-    final Scene outsideWireframeBuildings = Scene();
-    final Scene outsideNightBuildings = Scene();
-    final Scene outsideSketch = Scene();
-     */
 
     // Other Scenes
     LogInfo("creating other scenes");
@@ -440,6 +464,8 @@ class AllScenes {
     insideGOL1 = SceneGOL.Variant1(cgl, w, h, rng);
     insideGOL2 = SceneGOL.Variant2(cgl, w, h, rng);
     insideFractal = Scene.InsideFractal(cgl, w, h);
+
+    portal = Scene.Portal(cgl);
 
     LogInfo("creating other scenes done");
     CGL.Framebuffer.Screen(cgl).Activate(CGL.GL_CLEAR_ALL, 0, 0, w, h);
@@ -456,6 +482,8 @@ class AllScenes {
   Scene insideGOL1;
   Scene insideGOL2;
   Scene insideFractal;
+
+  Scene portal;
 
   void UpdateCameras(String name, CGL.Perspective perspective, double timeMs,
       TorusKnotCamera tkc, InitialApproachCamera iac) {
@@ -474,6 +502,10 @@ class AllScenes {
       case "night-outside":
       case "sketch-outside":
         tkc.SetTubeRadius(kTubeRadius + 50.0);
+        // hard coded duration
+        tkc.animate(25000, gCameraRoute.value);
+        (portal.mat.GetUniforms()[CGL.uModelMatrix] as VM.Matrix4)
+            .setTranslation(tkc.point);
         perspective.UpdateCamera(tkc);
         tkc.animate(timeMs, gCameraRoute.value);
         break;
@@ -485,6 +517,10 @@ class AllScenes {
       case "gol2-inside":
       case "fractal-inside":
         tkc.SetTubeRadius(1.0);
+        // hard coded duration
+        tkc.animate(20000, gCameraRoute.value);
+        (portal.mat.GetUniforms()[CGL.uModelMatrix] as VM.Matrix4)
+            .setTranslation(tkc.point);
         perspective.UpdateCamera(tkc);
         tkc.animate(timeMs, gCameraRoute.value);
         break;
@@ -495,6 +531,7 @@ class AllScenes {
 
   void RenderScene(String name, CGL.ChronosGL cgl, CGL.Perspective perspective,
       double timeMs) {
+    portal.mat.ForceUniform(CGL.uTime, timeMs);
     if (name == "wireframe-inside-varying-width" ||
         name == "wireframe-inside-hexagon") {
       double alpha = Math.sin(timeMs / 2000.0) * 10.0 + 11.0;
@@ -509,6 +546,10 @@ class AllScenes {
     insidePlasma.mat.ForceUniform(CGL.uTime, timeMs / 5000.0);
     switch (name) {
       case "wireframe-outside":
+        outsideWireframeBuildings.Draw(cgl, perspective);
+        outsideSteet.Draw(cgl, perspective);
+        portal.Draw(cgl, perspective);
+        break;
       case "wireframe-orbit":
         outsideWireframeBuildings.Draw(cgl, perspective);
         outsideSteet.Draw(cgl, perspective);
@@ -516,30 +557,41 @@ class AllScenes {
       case "plasma-inside":
         outsideWireframeBuildings.Draw(cgl, perspective);
         insidePlasma.Draw(cgl, perspective);
+        portal.Draw(cgl, perspective);
         break;
       case "wireframe-inside-hexagon":
         outsideWireframeBuildings.Draw(cgl, perspective);
         insideWireframeHex.Draw(cgl, perspective);
+        portal.Draw(cgl, perspective);
         break;
       case "wireframe-inside":
       case "wireframe-inside-varying-width":
         outsideWireframeBuildings.Draw(cgl, perspective);
         insideWireframe.Draw(cgl, perspective);
+        portal.Draw(cgl, perspective);
         break;
       case "gol-inside":
         insideGOL1.Draw(cgl, perspective);
+        portal.Draw(cgl, perspective);
         break;
       case "gol2-inside":
         insideGOL2.Draw(cgl, perspective);
+        portal.Draw(cgl, perspective);
         break;
       case "fractal-inside":
         insideFractal.Draw(cgl, perspective);
+        portal.Draw(cgl, perspective);
         break;
       case "sketch-outside":
         outsideSketch.Draw(cgl, perspective);
         outsideSteet.Draw(cgl, perspective);
+        portal.Draw(cgl, perspective);
         break;
       case "night-outside":
+        outsideNightBuildings.Draw(cgl, perspective);
+        outsideSteet.Draw(cgl, perspective);
+        portal.Draw(cgl, perspective);
+        break;
       case "night-orbit":
         outsideNightBuildings.Draw(cgl, perspective);
         outsideSteet.Draw(cgl, perspective);
@@ -598,26 +650,14 @@ void main() {
 
   final Math.Random rng = Math.Random(0);
 
-  final CGL.RenderProgram sphereProgram = CGL.RenderProgram(
-      "gol", cgl, CGL.solidColorVertexShader, CGL.solidColorFragmentShader);
-
-  // The sphere is used to make important places and will
-  // not be shown in the demo
-  final CGL.MeshData sphere = Sphere(sphereProgram, 100.0);
-  VM.Matrix4 spehereTransform = VM.Matrix4.identity();
-  final CGL.Material sphereMat = CGL.Material("sphere")
-    ..SetUniform(CGL.uColor, VM.Vector3(1.0, 1.0, 1.0))
-    ..SetUniform(CGL.uModelMatrix, spehereTransform);
   tkc.SetTubeRadius(kTubeRadius + 50.0);
   tkc.animate(0, "9");
   iac.ci.setDst(tkc.transform);
   iac.cameraFinalPos.setFrom(tkc.point);
-  tkc.SetTubeRadius(kTubeRadius + 150.0);
-  tkc.animate(0, "9");
-  spehereTransform.setTranslation(tkc.point);
 
   AllScenes allScenes =
       AllScenes(cgl, rng, canvas.clientWidth, canvas.clientHeight);
+
   double zeroTimeMs = 0.0;
   double lastTimeMs = 0.0;
 
@@ -639,7 +679,6 @@ void main() {
       // allow the camera to also reflect mouse movement.
       oc.animate(elapsed);
       allScenes.RenderScene(gTheme.value, cgl, perspective, t);
-      sphereProgram.Draw(sphere, [sphereMat, perspective]);
     } else if (gMode.value == "demo") {
       if (gMusic.ended || gMusic.currentTime == 0.0) {
         print("Music started ${gMusic.ended} ${gMusic.currentTime}");
@@ -660,7 +699,6 @@ void main() {
       }
     } else {
       allScenes.UpdateCameras(gTheme.value, perspective, t, tkc, iac);
-      sphereProgram.Draw(sphere, [sphereMat, perspective]);
       allScenes.RenderScene(gTheme.value, cgl, perspective, t);
     }
 
