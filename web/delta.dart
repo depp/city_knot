@@ -482,8 +482,8 @@ class AllScenes {
           Scene.OutsideWireframeBuildings(cgl, buildings);
       outsideSketch = SceneSketch(cgl, rng, w, h, buildings);
 
-      outsideNightBuildings = Scene.OutsideNightBuildings(cgl, buildings);
-      outsideNightBuildings2 =
+      outsideNightBuildings2 = Scene.OutsideNightBuildings(cgl, buildings);
+      outsideNightBuildings =
           SceneCityNight(cgl, rng, w, h, floorplan, torus, kWidth);
     }
     LogInfo("creating buildingcenes done");

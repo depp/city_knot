@@ -62,8 +62,37 @@ void ExtractTransformsAtTorusSurface(CGL.GeometryBuilder torus, int kWidth,
   mat.copyRotation(matNormal);
 }
 
-CGL.GeometryBuilder MakeSimpleBuildings(List<FLOORPLAN.Building> buildings,
-    CGL.GeometryBuilder torus, int kWidth) {
+void ExtractTransformsAtTorusSurfaceCity(CGL.GeometryBuilder torus, int kWidth,
+    Rect base, double height, VM.Matrix4 mat, VM.Matrix3 matNormal) {
+  VM.Vector3 GetVertex(int x, int y) {
+    return torus.vertices[x + y * (kWidth + 1)];
+  }
+
+  final int y = base.x.floor();
+  final int x = base.y.floor();
+  final int h = base.w.floor();
+  final int w = base.h.floor();
+  VM.Vector3 center = GetVertex(x + w ~/ 2, y + h ~/ 2);
+  VM.Vector3 centerW = GetVertex(x + w ~/ 2 + 1, y + h ~/ 2);
+  VM.Vector3 centerH = GetVertex(x + w ~/ 2, y + h ~/ 2 + 1);
+
+  VM.Vector3 dir1 = centerW - center;
+  VM.Vector3 dir2 = centerH - center;
+  VM.Vector3 dir3 = dir1.cross(dir2)..normalize();
+  VM.Vector3 pos = center + dir3.scaled(1.0);
+  //node.setPosFromVec(pos);
+
+  //VM.setViewMatrix(node.transform, pos, center, dir1);
+  VM.setViewMatrix(mat, VM.Vector3.zero(), dir3, dir1);
+  mat.invert();
+  mat.setTranslation(pos);
+  mat.rotateX(-Math.pi / 2.0);
+  // TODO: this is not quite correct
+  mat.copyRotation(matNormal);
+}
+
+CGL.GeometryBuilder MakeSimpleBuildings(
+    List<FLOORPLAN.Building> buildings, CGL.GeometryBuilder torus, int kWidth) {
   print("building stats ${buildings.length}");
 
   CGL.GeometryBuilder out = CGL.GeometryBuilder();
@@ -180,9 +209,16 @@ Shape MakeBuildings(
     final RoofOptions roofOpt = RoofOptions(rng, params, colors);
     final THEME.RoofFeatures rf = theme.roofFeatures;
 
-    _AddOneBuilding(tmp, rng, params, colors, roofOpt, rf, b);
-    ExtractTransformsAtTorusSurface(
+    ExtractTransformsAtTorusSurfaceCity(
         torus, kWidth, b.base, b.height, mat, matNormal);
+
+    b.base.w += 10;
+    b.base.h += 10;
+
+    b.base.x = -b.base.w / 2;
+    b.base.y = -b.base.h / 2;
+    _AddOneBuilding(tmp, rng, params, colors, roofOpt, rf, b);
+
     for (CGL.Material cm in tmp.builders.keys) {
       out.Get(cm).MergeAndTakeOwnership(tmp.builders[cm], mat, matNormal);
     }
