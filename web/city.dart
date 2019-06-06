@@ -33,13 +33,38 @@ CGL.GeometryBuilder _MakeOneBuilding(double dx, double dy, double dz) {
   return gb;
 }
 
-CGL.GeometryBuilder MakeSimpleBuildings(
-    FLOORPLAN.Floorplan floorplan, CGL.GeometryBuilder torus, int kWidth) {
-  print("building statr ${floorplan.GetBuildings().length}");
-
+void ExtractTransformsAtTorusSurface(CGL.GeometryBuilder torus, int kWidth,
+    Rect base, double height, VM.Matrix4 mat, VM.Matrix3 matNormal) {
   VM.Vector3 GetVertex(int x, int y) {
     return torus.vertices[x + y * (kWidth + 1)];
   }
+
+  final int y = base.x.floor();
+  final int x = base.y.floor();
+  final int h = base.w.floor();
+  final int w = base.h.floor();
+  VM.Vector3 center = GetVertex(x + w ~/ 2, y + h ~/ 2);
+  VM.Vector3 centerW = GetVertex(x + w ~/ 2 + 1, y + h ~/ 2);
+  VM.Vector3 centerH = GetVertex(x + w ~/ 2, y + h ~/ 2 + 1);
+
+  VM.Vector3 dir1 = centerW - center;
+  VM.Vector3 dir2 = centerH - center;
+  VM.Vector3 dir3 = dir1.cross(dir2)..normalize();
+  VM.Vector3 pos = center + dir3.scaled(height);
+  //node.setPosFromVec(pos);
+
+  //VM.setViewMatrix(node.transform, pos, center, dir1);
+  VM.setViewMatrix(mat, VM.Vector3.zero(), dir3, dir1);
+  mat.invert();
+  mat.setTranslation(pos);
+
+  // TODO: this is not quite correct
+  mat.copyRotation(matNormal);
+}
+
+CGL.GeometryBuilder MakeSimpleBuildings(
+    FLOORPLAN.Floorplan floorplan, CGL.GeometryBuilder torus, int kWidth) {
+  print("building statr ${floorplan.GetBuildings().length}");
 
   CGL.GeometryBuilder out = CGL.GeometryBuilder();
   out.EnableAttribute(CGL.aColor);
@@ -47,33 +72,17 @@ CGL.GeometryBuilder MakeSimpleBuildings(
   out.EnableAttribute(CGL.aTexUV);
   out.EnableAttribute(CGL.aCenter);
 
+  VM.Matrix4 mat = VM.Matrix4.zero();
   VM.Matrix3 matNormal = VM.Matrix3.zero();
 
   for (FLOORPLAN.Building b in floorplan.GetBuildings()) {
-    final int y = b.base.x.floor();
-    final int x = b.base.y.floor();
     final int h = b.base.w.floor();
     final int w = b.base.h.floor();
-    VM.Vector3 center = GetVertex(x + w ~/ 2, y + h ~/ 2);
-    VM.Vector3 centerW = GetVertex(x + w ~/ 2 + 1, y + h ~/ 2);
-    VM.Vector3 centerH = GetVertex(x + w ~/ 2, y + h ~/ 2 + 1);
-
     final CGL.GeometryBuilder gb = _MakeOneBuilding(h + 0.0, w + 0.0, b.height);
-    VM.Vector3 dir1 = centerW - center;
-    VM.Vector3 dir2 = centerH - center;
-    VM.Vector3 dir3 = dir1.cross(dir2)..normalize();
-    VM.Vector3 pos = center + dir3.scaled(b.height);
-    //node.setPosFromVec(pos);
 
-    //VM.setViewMatrix(node.transform, pos, center, dir1);
-    CGL.Spatial transform = CGL.Spatial("tmp");
-    transform.lookAt(dir3, dir1);
-    transform.transform.invert();
-    transform.setPosFromVec(pos);
-
-    // TODO: this is not quite correct
-    transform.transform.copyRotation(matNormal);
-    out.MergeAndTakeOwnership(gb, transform.transform, matNormal);
+    ExtractTransformsAtTorusSurface(
+        torus, kWidth, b.base, b.height, mat, matNormal);
+    out.MergeAndTakeOwnership(gb, mat, matNormal);
   }
   print("final building gb ${out}");
   return out;
@@ -130,8 +139,15 @@ void _AddOneBuilding(
   }
 }
 
-Shape MakeBuildings(CGL.ChronosGL cgl, Math.Random rng, double seed,
-    List<FLOORPLAN.Building> buildings, List<String> logos, THEME.Theme theme) {
+Shape MakeBuildings(
+    CGL.ChronosGL cgl,
+    Math.Random rng,
+    double seed,
+    List<FLOORPLAN.Building> floorplan,
+    CGL.GeometryBuilder torus,
+    int kWidth,
+    List<String> logos,
+    THEME.Theme theme) {
   print("Make building materials");
 
   final CGL.Material logo = theme.roofFeatures.allowLogo
@@ -149,20 +165,20 @@ Shape MakeBuildings(CGL.ChronosGL cgl, Math.Random rng, double seed,
     ..solidMat = FACADE.MakeSolid(cgl);
 
   print("Errecting building");
-  Shape shape = Shape();
+  Shape out = Shape();
   int count = 0;
-  for (FLOORPLAN.Building b in buildings) {
+  for (FLOORPLAN.Building b in floorplan) {
     if (count % 100 == 0) {
       print("initialize buidings ${count}");
     }
     count++;
-
+    Shape tmp = Shape();
     final THEME.BuildingColors colors = theme.colorFun(rng);
     final RoofOptions roofOpt = RoofOptions(rng, params, colors);
     final THEME.RoofFeatures rf = theme.roofFeatures;
 
-    _AddOneBuilding(shape, rng, params, colors, roofOpt, rf, b);
+    _AddOneBuilding(tmp, rng, params, colors, roofOpt, rf, b);
   }
   print("Generate Mesh for Buildings");
-  return shape;
+  return out;
 }
