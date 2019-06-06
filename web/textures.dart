@@ -1,11 +1,11 @@
-library testures;
+library textures;
 
 import 'dart:html' as HTML;
 import 'dart:math' as Math;
 
 import 'package:chronosgl/chronosgl.dart' as CGL;
 
-CGL.Texture MakeNoiseTesture(CGL.ChronosGL cgl, Math.Random rand) {
+CGL.Texture MakeNoiseTexture(CGL.ChronosGL cgl, Math.Random rand) {
   HTML.CanvasElement canvas = new HTML.CanvasElement();
   canvas.width = 512 * 2;
   canvas.height = 512 * 2;
@@ -23,3 +23,5 @@ CGL.Texture MakeNoiseTesture(CGL.ChronosGL cgl, Math.Random rand) {
 
   return CGL.ImageTexture(cgl, "noise", canvas, CGL.TexturePropertiesMipmap);
 }
+
+

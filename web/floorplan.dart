@@ -29,7 +29,7 @@ import 'dart:typed_data';
 
 import 'package:vector_math/vector_math.dart' as VM;
 
-import 'geometry.dart';
+import 'geometry.dart' as GEOMETRY;
 import 'logging.dart';
 
 const double kMaxCarMovement = 0.5;
@@ -137,7 +137,7 @@ class WorldMap {
   }
 
   // This relies on having streets all around - sentinels
-  Rect MaxEmptyPlotContaining(int x, int y) {
+  GEOMETRY.Rect MaxEmptyPlotContaining(int x, int y) {
     int x1 = x;
     int x2 = x;
     int y1 = y;
@@ -150,7 +150,7 @@ class WorldMap {
     y1++;
     for (y2++; IsEmpty(x, y2); y2++);
     y2--;
-    return Rect(x1 * 1.0, y1 * 1.0, x2 - x1 + 1.0, y2 - y1 + 1.0);
+    return GEOMETRY.Rect(x1 * 1.0, y1 * 1.0, x2 - x1 + 1.0, y2 - y1 + 1.0);
   }
 
   void MergeTile(int x, int y, int new_kind) {
@@ -176,7 +176,7 @@ class WorldMap {
     return ForceTile(p.x, p.y, kind);
   }
 
-  void MarkPlot(Rect plot, int kind) {
+  void MarkPlot(GEOMETRY.Rect plot, int kind) {
     int x = plot.x.floor();
     int y = plot.y.floor();
     int w = plot.w.floor();
@@ -262,7 +262,7 @@ class Road {
 
 class Building {
   Building(this.plot, this.offset, this.height, this.kind, WorldMap map) {
-    base = Rect(plot.x + offset, plot.y + offset, plot.w - 2 * offset,
+    base = GEOMETRY.Rect(plot.x + offset, plot.y + offset, plot.w - 2 * offset,
         plot.h - 2 * offset);
     if (map != null) {
       map.MarkPlot(plot, kTileBuildingBorder);
@@ -270,8 +270,8 @@ class Building {
     }
   }
 
-  Rect plot;
-  Rect base;
+  GEOMETRY.Rect plot;
+  GEOMETRY.Rect base;
   int offset;
   double height;
   int kind;
@@ -410,8 +410,8 @@ class Floorplan {
 
   WorldMap get world_map => _map;
 
-  List<Rect> GetTileStrips(int kind) {
-    List<Rect> out = [];
+  List<GEOMETRY.Rect> GetTileStrips(int kind) {
+    List<GEOMETRY.Rect> out = [];
     for (int x = 0; x < _w; x++) {
       int count = 0;
       for (int y = 0; y <= _h; y++) {
@@ -421,7 +421,7 @@ class Floorplan {
           count++;
         } else {
           if (count > 1) {
-            out.add(Rect(x * 1.0, (y - count) * 1.0, 1.0, count * 1.0));
+            out.add(GEOMETRY.Rect(x * 1.0, (y - count) * 1.0, 1.0, count * 1.0));
           }
           count = 0;
         }
@@ -436,7 +436,7 @@ class Floorplan {
           count++;
         } else {
           if (count > 1) {
-            out.add(Rect((x - count) * 1.0, y * 1.0, count * 1.0, 1.0));
+            out.add(GEOMETRY.Rect((x - count) * 1.0, y * 1.0, count * 1.0, 1.0));
           }
           count = 0;
         }
@@ -494,7 +494,7 @@ class Floorplan {
       int x = rng.nextInt(_w);
       int y = rng.nextInt(_h);
       if (!_map.IsEmpty(x, y)) continue;
-      Rect plot = _map.MaxEmptyPlotContaining(x, y);
+      GEOMETRY.Rect plot = _map.MaxEmptyPlotContaining(x, y);
       // TODO
       //if (!_wc.IsWithinCenter(plot)) continue;
 
@@ -540,7 +540,7 @@ class Floorplan {
 
   // Fill rest of m
   void InitBuildings(Random rng) {
-    Rect plot = Rect(0.0, 0.0, 0.0, 0.0);
+    GEOMETRY.Rect plot = GEOMETRY.Rect(0.0, 0.0, 0.0, 0.0);
     for (int x = 0; x < _w - kMinBuildingSize; x++) {
       for (int y = 0; y < _h - kMinBuildingSize; y++) {
         if (!_map.IsEmpty(x, y)) continue;

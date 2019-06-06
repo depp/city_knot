@@ -4,6 +4,7 @@ import 'dart:math' as Math;
 import 'package:chronosgl/chronosgl.dart' as CGL;
 import 'package:vector_math/vector_math.dart' as VM;
 
+import 'city.dart' as CITY;
 import 'floorplan.dart';
 import 'fractal.dart' as FRACTAL;
 import 'gol.dart' as GOL;
@@ -405,7 +406,7 @@ class SceneSketch extends Scene {
       ..SetUniform(CGL.uModelMatrix, VM.Matrix4.identity())
       ..SetUniform(CGL.uShininess, 10.0)
       ..SetUniform(CGL.uTexture2, fb.colorTexture)
-      ..SetUniform(CGL.uTexture, MakeNoiseTesture(cgl, rng));
+      ..SetUniform(CGL.uTexture, MakeNoiseTexture(cgl, rng));
 
     programPrep = CGL.RenderProgram(
         "sketch-prep", cgl, sketchPrepVertexShader, sketchPrepFragmentShader);
@@ -442,7 +443,8 @@ class AllScenes {
     } else {
       final Floorplan floorplan = Floorplan(kHeight, kWidth, 10, rng);
       final CGL.GeometryBuilder torus = TorusKnot(kHeight, kWidth);
-      final CGL.GeometryBuilder buildings = MakeBuildings(floorplan, torus);
+      final CGL.GeometryBuilder buildings =
+          CITY.MakeSimpleBuildings(floorplan, torus, kWidth);
 
       outsideSteet = Scene.OutsideStreet(cgl, floorplan, torus);
       outsideWireframeBuildings =
