@@ -7,6 +7,7 @@ import 'package:vector_math/vector_math.dart' as VM;
 import 'city.dart' as CITY;
 import 'floorplan.dart';
 import 'fractal.dart' as FRACTAL;
+import 'geometry.dart';
 import 'gol.dart' as GOL;
 import 'logging.dart';
 import 'meshes.dart';
@@ -14,6 +15,7 @@ import 'mondrianjs.dart';
 import 'portal.dart' as PORTAL;
 import 'shaders.dart';
 import 'textures.dart';
+import 'theme.dart' as THEME;
 
 final HTML.SelectElement gMode =
     HTML.document.querySelector('#mode') as HTML.SelectElement;
@@ -429,6 +431,34 @@ class SceneSketch extends Scene {
   CGL.Framebuffer screen;
 }
 
+class SceneCityNight extends Scene {
+  SceneCityNight(CGL.ChronosGL cgl, Math.Random rng, this.w, this.h,
+      Floorplan floorplan, CGL.GeometryBuilder torus, int kWidth) {
+    screen = CGL.Framebuffer.Screen(cgl);
+
+    program = CGL.RenderProgram(
+        "final", cgl, pcTexturedVertexShader, pcTexturedFragmentShader);
+
+    Shape shape = CITY.MakeBuildings(cgl, rng, 666.0, floorplan.GetBuildings(),
+        torus, kWidth, ["delta", "alpha"], THEME.allThemes[THEME.kModeNight]);
+    print(">>>>>>> ${shape}");
+    for (CGL.Material m in shape.builders.keys) {
+      m.SetUniform(CGL.uModelMatrix, VM.Matrix4.identity());
+      meshes[m] = CGL.GeometryBuilderToMeshData("", program, shape.builders[m]);
+    }
+  }
+
+  void Draw(CGL.ChronosGL cgl, CGL.Perspective perspective) {
+    screen.Activate(CGL.GL_CLEAR_ALL, 0, 0, w, h);
+    for (CGL.Material m in meshes.keys)
+      program.Draw(meshes[m], [perspective, m]);
+  }
+
+  int w, h;
+  Map<CGL.Material, CGL.MeshData> meshes = {};
+  CGL.Framebuffer screen;
+}
+
 class AllScenes {
   AllScenes(CGL.ChronosGL cgl, Math.Random rng, int w, int h) {
     // Building Scenes
@@ -440,17 +470,21 @@ class AllScenes {
       outsideWireframeBuildings = Scene();
       outsideNightBuildings = Scene();
       outsideSketch = Scene();
+      outsideNightBuildings2 = Scene();
     } else {
       final Floorplan floorplan = Floorplan(kHeight, kWidth, 10, rng);
       final CGL.GeometryBuilder torus = TorusKnot(kHeight, kWidth);
       final CGL.GeometryBuilder buildings =
-          CITY.MakeSimpleBuildings(floorplan, torus, kWidth);
+          CITY.MakeSimpleBuildings(floorplan.GetBuildings(), torus, kWidth);
 
       outsideSteet = Scene.OutsideStreet(cgl, floorplan, torus);
       outsideWireframeBuildings =
           Scene.OutsideWireframeBuildings(cgl, buildings);
-      outsideNightBuildings = Scene.OutsideNightBuildings(cgl, buildings);
       outsideSketch = SceneSketch(cgl, rng, w, h, buildings);
+
+      outsideNightBuildings = Scene.OutsideNightBuildings(cgl, buildings);
+      outsideNightBuildings2 =
+          SceneCityNight(cgl, rng, w, h, floorplan, torus, kWidth);
     }
     LogInfo("creating buildingcenes done");
 
@@ -476,6 +510,7 @@ class AllScenes {
   Scene outsideSteet;
   Scene outsideWireframeBuildings;
   Scene outsideNightBuildings;
+  Scene outsideNightBuildings2;
   Scene outsideSketch;
 
   Scene insidePlasma;

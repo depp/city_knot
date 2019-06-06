@@ -178,7 +178,6 @@ class Quad {
     _PopulateUV(uv);
   }
 
-
   List<VM.Vector3> v = [];
   List<VM.Vector2> t = [];
 
@@ -222,18 +221,19 @@ class ColorMat {
 }
 
 class Shape {
-  Shape();
+  Shape(this._attributes, this._pointAttributes);
 
   Map<CGL.Material, CGL.GeometryBuilder> builders = {};
+  List<String> _attributes;
+  List<String> _pointAttributes;
+
+  CGL.GeometryBuilder Get(CGL.Material m) {
+    return builders.putIfAbsent(m, initialBuilder);
+  }
 
   void AddPoint(VM.Vector3 pos, double size, ColorMat m) {
-    CGL.GeometryBuilder gb = builders[m.mat];
-    if (gb == null) {
-      gb = CGL.GeometryBuilder(true);
-      gb.EnableAttribute(CGL.aPointSize);
-      gb.EnableAttribute(CGL.aColor);
-      builders[m.mat] = gb;
-    }
+    final CGL.GeometryBuilder gb =
+        builders.putIfAbsent(m.mat, initialBuilderPoints);
 
     gb.AddVertex(pos);
     gb.AddAttributeVector3(CGL.aColor, m.color);
@@ -241,13 +241,8 @@ class Shape {
   }
 
   void AddManyPoints(List<VM.Vector3> pos, double size, ColorMat m) {
-    CGL.GeometryBuilder gb = builders[m.mat];
-    if (gb == null) {
-      gb = CGL.GeometryBuilder(true);
-      gb.EnableAttribute(CGL.aPointSize);
-      gb.EnableAttribute(CGL.aColor);
-      builders[m.mat] = gb;
-    }
+    final CGL.GeometryBuilder gb =
+        builders.putIfAbsent(m.mat, initialBuilderPoints);
 
     for (VM.Vector3 p in pos) {
       gb.AddVertex(p);
@@ -257,13 +252,8 @@ class Shape {
   }
 
   void AddQuad(Quad q, ColorMat m) {
-    CGL.GeometryBuilder gb = builders[m.mat];
-    if (gb == null) {
-      gb = CGL.GeometryBuilder(false);
-      gb.EnableAttribute(CGL.aColor);
-      gb.EnableAttribute(CGL.aTexUV);
-      builders[m.mat] = gb;
-    }
+    final CGL.GeometryBuilder gb = builders.putIfAbsent(m.mat, initialBuilder);
+
     gb.AddVerticesFace4TakeOwnership(q.v);
     gb.AddAttributesVector2TakeOwnership(CGL.aTexUV, q.t);
     gb.AddAttributesVector3TakeOwnership(
@@ -271,18 +261,29 @@ class Shape {
   }
 
   void AddTriad(Triad t, ColorMat m) {
-    CGL.GeometryBuilder gb = builders[m.mat];
-    if (gb == null) {
-      gb = CGL.GeometryBuilder(false);
-      gb.EnableAttribute(CGL.aColor);
-      gb.EnableAttribute(CGL.aTexUV);
-      builders[m.mat] = gb;
-    }
+    final CGL.GeometryBuilder gb = builders.putIfAbsent(m.mat, initialBuilder);
+
     gb.AddVerticesFace3TakeOwnership(t.v);
 
     gb.AddAttributesVector2TakeOwnership(CGL.aTexUV, t.t);
     gb.AddAttributesVector3TakeOwnership(
         CGL.aColor, [m.color, m.color, m.color]);
+  }
+
+  CGL.GeometryBuilder initialBuilder() {
+    CGL.GeometryBuilder gb = CGL.GeometryBuilder(false);
+    for (String a in _attributes) {
+      gb.EnableAttribute(a);
+    }
+    return gb;
+  }
+
+  CGL.GeometryBuilder initialBuilderPoints() {
+    CGL.GeometryBuilder gb = CGL.GeometryBuilder(true);
+    for (String a in _pointAttributes) {
+      gb.EnableAttribute(a);
+    }
+    return gb;
   }
 
   @override

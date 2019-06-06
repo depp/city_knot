@@ -62,9 +62,9 @@ void ExtractTransformsAtTorusSurface(CGL.GeometryBuilder torus, int kWidth,
   mat.copyRotation(matNormal);
 }
 
-CGL.GeometryBuilder MakeSimpleBuildings(
-    FLOORPLAN.Floorplan floorplan, CGL.GeometryBuilder torus, int kWidth) {
-  print("building statr ${floorplan.GetBuildings().length}");
+CGL.GeometryBuilder MakeSimpleBuildings(List<FLOORPLAN.Building> buildings,
+    CGL.GeometryBuilder torus, int kWidth) {
+  print("building stats ${buildings.length}");
 
   CGL.GeometryBuilder out = CGL.GeometryBuilder();
   out.EnableAttribute(CGL.aColor);
@@ -75,7 +75,7 @@ CGL.GeometryBuilder MakeSimpleBuildings(
   VM.Matrix4 mat = VM.Matrix4.zero();
   VM.Matrix3 matNormal = VM.Matrix3.zero();
 
-  for (FLOORPLAN.Building b in floorplan.GetBuildings()) {
+  for (FLOORPLAN.Building b in buildings) {
     final int h = b.base.w.floor();
     final int w = b.base.h.floor();
     final CGL.GeometryBuilder gb = _MakeOneBuilding(h + 0.0, w + 0.0, b.height);
@@ -143,7 +143,7 @@ Shape MakeBuildings(
     CGL.ChronosGL cgl,
     Math.Random rng,
     double seed,
-    List<FLOORPLAN.Building> floorplan,
+    List<FLOORPLAN.Building> buildings,
     CGL.GeometryBuilder torus,
     int kWidth,
     List<String> logos,
@@ -165,19 +165,27 @@ Shape MakeBuildings(
     ..solidMat = FACADE.MakeSolid(cgl);
 
   print("Errecting building");
-  Shape out = Shape();
+  Shape out = Shape([CGL.aNormal, CGL.aColor, CGL.aCenter, CGL.aTexUV], []);
   int count = 0;
-  for (FLOORPLAN.Building b in floorplan) {
+  VM.Matrix4 mat = VM.Matrix4.zero();
+  VM.Matrix3 matNormal = VM.Matrix3.zero();
+
+  for (FLOORPLAN.Building b in buildings) {
     if (count % 100 == 0) {
       print("initialize buidings ${count}");
     }
     count++;
-    Shape tmp = Shape();
+    Shape tmp = Shape([CGL.aNormal, CGL.aColor, CGL.aCenter, CGL.aTexUV], []);
     final THEME.BuildingColors colors = theme.colorFun(rng);
     final RoofOptions roofOpt = RoofOptions(rng, params, colors);
     final THEME.RoofFeatures rf = theme.roofFeatures;
 
     _AddOneBuilding(tmp, rng, params, colors, roofOpt, rf, b);
+    ExtractTransformsAtTorusSurface(
+        torus, kWidth, b.base, b.height, mat, matNormal);
+    for (CGL.Material cm in tmp.builders.keys) {
+      out.Get(cm).MergeAndTakeOwnership(tmp.builders[cm], mat, matNormal);
+    }
   }
   print("Generate Mesh for Buildings");
   return out;
