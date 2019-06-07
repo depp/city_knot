@@ -9,12 +9,13 @@ import 'logging.dart';
 
 // The final version will set magicMutl to 2 but this is slow
 // to start up so during development it will be 1
-const int magicMult = 1;
-const double kRadius = 500.0 * magicMult;
+const int magicMult = 4;
+const double kRadius = 125.0 * magicMult;
 const double kHeightScale = 1.0;
-const double kTubeRadius = 100.0 * magicMult;
-const int kWidth = 240 * magicMult; // divisible by 3 and 8
-const int kHeight = 2400 * magicMult; // divisible by 3 and 8
+const double kTubeRadius = 25.0 * magicMult;
+const int kWidth = 60 * magicMult; // divisible by 3 and 8
+const int kHeight = 800 * magicMult; // divisible by 3 and 8
+
 const double kBuildingDim = 20;
 
 /// Like ShapeTorusKnotGeometry but with duplicate Vertices to make it
