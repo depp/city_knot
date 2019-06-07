@@ -240,6 +240,9 @@ class Shape {
     VM.Vector4(0.0, 0.0, 0.0, 1.0)
   ];
 
+  VM.Vector3 temp = VM.Vector3.zero();
+  VM.Vector3 norm = VM.Vector3.zero();
+
   CGL.GeometryBuilder Get(CGL.Material m) {
     return builders.putIfAbsent(m, initialBuilder);
   }
@@ -274,6 +277,8 @@ class Shape {
     gb.AddAttributesVector3TakeOwnership(
         CGL.aColor, [m.color, m.color, m.color, m.color]);
     gb.AddAttributesVector4TakeOwnership(CGL.aCenter, centers4);
+    CGL.NormalFromPoints(q.v[0], q.v[1], q.v[2], temp, norm);
+    gb.AddAttributesVector3(CGL.aNormal, [norm, norm, norm, norm]);
   }
 
   void AddTriad(Triad t, ColorMat m) {
@@ -285,6 +290,8 @@ class Shape {
     gb.AddAttributesVector3TakeOwnership(
         CGL.aColor, [m.color, m.color, m.color]);
     gb.AddAttributesVector4TakeOwnership(CGL.aCenter, centers3);
+    CGL.NormalFromPoints(t.v[0], t.v[1], t.v[2], temp, norm);
+    gb.AddAttributesVector3(CGL.aNormal, [norm, norm, norm]);
   }
 
   CGL.GeometryBuilder initialBuilder() {
