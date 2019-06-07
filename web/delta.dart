@@ -484,7 +484,9 @@ class SceneSketch2 extends Scene {
 
   void Draw(CGL.ChronosGL cgl, CGL.Perspective perspective) {
     fb.Activate(CGL.GL_CLEAR_ALL, 0, 0, w, h);
-    programPrep.Draw(mesh, [perspective, illumination, mat]);
+    for (CGL.Material m in meshes.keys) {
+      programPrep.Draw(meshes[m], [perspective, illumination, m]);
+    }
     screen.Activate(CGL.GL_CLEAR_ALL, 0, 0, w, h);
     for (CGL.Material m in meshes.keys) {
       program.Draw(meshes[m], [perspective, illumination, m]);
@@ -602,8 +604,8 @@ class AllScenes {
       outsideWireframeBuildings =
           SceneCityWireframe(cgl, rng, w, h, floorplan, torus, kWidth);
 
-      outsideSketch = SceneSketch(cgl, rng, w, h, buildings);
-      outsideSketch2 = SceneSketch2(cgl, rng, w, h, floorplan, torus, kWidth);
+      outsideSketch2 = SceneSketch(cgl, rng, w, h, buildings);
+      outsideSketch = SceneSketch2(cgl, rng, w, h, floorplan, torus, kWidth);
     }
     LogInfo("creating buildingcenes done");
 
