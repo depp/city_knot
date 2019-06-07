@@ -212,12 +212,11 @@ Shape MakeBuildings(
     ExtractTransformsAtTorusSurfaceCity(
         torus, kWidth, b.base, b.height, mat, matNormal);
 
-    b.base.w += 10;
-    b.base.h += 10;
+    Rect oldbase = b.base;
 
-    b.base.x = -b.base.w / 2;
-    b.base.y = -b.base.h / 2;
+    b.base = Rect(-b.base.w / 2, -b.base.h / 2, b.base.w, b.base.h);
     _AddOneBuilding(tmp, rng, params, colors, roofOpt, rf, b);
+    b.base = oldbase;
 
     for (CGL.Material cm in tmp.builders.keys) {
       out.Get(cm).MergeAndTakeOwnership(tmp.builders[cm], mat, matNormal);

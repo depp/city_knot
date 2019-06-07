@@ -227,11 +227,25 @@ class Shape {
   List<String> _attributes;
   List<String> _pointAttributes;
 
+  List<VM.Vector4> centers3 = [
+    VM.Vector4(1.0, 0.0, 0.0, 0.0),
+    VM.Vector4(0.0, 1.0, 0.0, 0.0),
+    VM.Vector4(0.0, 0.0, 1.0, 0.0)
+  ];
+
+  List<VM.Vector4> centers4 = [
+    VM.Vector4(1.0, 0.0, 0.0, 1.0),
+    VM.Vector4(1.0, 1.0, 0.0, 1.0),
+    VM.Vector4(0.0, 1.0, 0.0, 1.0),
+    VM.Vector4(0.0, 0.0, 0.0, 1.0)
+  ];
+
   CGL.GeometryBuilder Get(CGL.Material m) {
     return builders.putIfAbsent(m, initialBuilder);
   }
 
   void AddPoint(VM.Vector3 pos, double size, ColorMat m) {
+    assert(false, "no points");
     final CGL.GeometryBuilder gb =
         builders.putIfAbsent(m.mat, initialBuilderPoints);
 
@@ -241,6 +255,7 @@ class Shape {
   }
 
   void AddManyPoints(List<VM.Vector3> pos, double size, ColorMat m) {
+    assert(false, "no points");
     final CGL.GeometryBuilder gb =
         builders.putIfAbsent(m.mat, initialBuilderPoints);
 
@@ -258,6 +273,7 @@ class Shape {
     gb.AddAttributesVector2TakeOwnership(CGL.aTexUV, q.t);
     gb.AddAttributesVector3TakeOwnership(
         CGL.aColor, [m.color, m.color, m.color, m.color]);
+    gb.AddAttributesVector4TakeOwnership(CGL.aCenter, centers4);
   }
 
   void AddTriad(Triad t, ColorMat m) {
@@ -268,6 +284,7 @@ class Shape {
     gb.AddAttributesVector2TakeOwnership(CGL.aTexUV, t.t);
     gb.AddAttributesVector3TakeOwnership(
         CGL.aColor, [m.color, m.color, m.color]);
+    gb.AddAttributesVector4TakeOwnership(CGL.aCenter, centers3);
   }
 
   CGL.GeometryBuilder initialBuilder() {

@@ -338,7 +338,8 @@ class Scene {
 
 class SceneGOL extends Scene {
   SceneGOL(CGL.ChronosGL cgl, this.w, this.h) {
-    CGL.GeometryBuilder torus = InsideTorusKTexture(kHeight ~/ 8, kWidth ~/ 8);
+    CGL.GeometryBuilder torus =
+        InsideTorusKTexture(kHeight ~/ 16, kWidth ~/ 16);
     program = CGL.RenderProgram(
         "gol", cgl, texturedVertexShader, texturedFragmentShader);
     mesh = CGL.GeometryBuilderToMeshData("gol", program, torus);
@@ -459,6 +460,47 @@ class SceneCityNight extends Scene {
   CGL.Framebuffer screen;
 }
 
+class SceneCityWireframe extends Scene {
+  SceneCityWireframe(CGL.ChronosGL cgl, Math.Random rng, this.w, this.h,
+      Floorplan floorplan, CGL.GeometryBuilder torus, int kWidth) {
+    screen = CGL.Framebuffer.Screen(cgl);
+
+    program = CGL.RenderProgram(
+        "final", cgl, wireframeVertexShader, wireframeFragmentShader);
+
+    Shape shape = CITY.MakeBuildings(
+        cgl,
+        rng,
+        666.0,
+        floorplan.GetBuildings(),
+        torus,
+        kWidth,
+        ["delta", "alpha"],
+        THEME.allThemes[THEME.kModeWireframe]);
+    print(">>>>>>> ${shape}");
+    for (CGL.Material m in shape.builders.keys) {
+      m
+        ..SetUniform(CGL.uModelMatrix, VM.Matrix4.identity())
+        ..SetUniform(uWidth, 1.5)
+        ..SetUniform(CGL.uColor, VM.Vector3(1.0, 1.0, 0.0))
+        ..SetUniform(CGL.uColorAlpha, VM.Vector4(1.0, 0.0, 0.0, 1.0))
+        ..SetUniform(CGL.uColorAlpha2, VM.Vector4(0.1, 0.0, 0.0, 1.0));
+
+      meshes[m] = CGL.GeometryBuilderToMeshData("", program, shape.builders[m]);
+    }
+  }
+
+  void Draw(CGL.ChronosGL cgl, CGL.Perspective perspective) {
+    screen.Activate(CGL.GL_CLEAR_ALL, 0, 0, w, h);
+    for (CGL.Material m in meshes.keys)
+      program.Draw(meshes[m], [perspective, m]);
+  }
+
+  int w, h;
+  Map<CGL.Material, CGL.MeshData> meshes = {};
+  CGL.Framebuffer screen;
+}
+
 class AllScenes {
   AllScenes(CGL.ChronosGL cgl, Math.Random rng, int w, int h) {
     // Building Scenes
@@ -467,9 +509,13 @@ class AllScenes {
     if (FAST_START_NO_BUILDINGS) {
       LogInfo("NO BUINDINGS");
       outsideSteet = Scene();
-      outsideWireframeBuildings = Scene();
-      outsideNightBuildings = Scene();
+
       outsideSketch = Scene();
+
+      outsideWireframeBuildings = Scene();
+      outsideWireframeBuildings2 = Scene();
+
+      outsideNightBuildings = Scene();
       outsideNightBuildings2 = Scene();
     } else {
       final Floorplan floorplan = Floorplan(kHeight, kWidth, 10, rng);
@@ -478,13 +524,19 @@ class AllScenes {
           CITY.MakeSimpleBuildings(floorplan.GetBuildings(), torus, kWidth);
 
       outsideSteet = Scene.OutsideStreet(cgl, floorplan, torus);
-      outsideWireframeBuildings =
-          Scene.OutsideWireframeBuildings(cgl, buildings);
-      outsideSketch = SceneSketch(cgl, rng, w, h, buildings);
 
       outsideNightBuildings2 = Scene.OutsideNightBuildings(cgl, buildings);
       outsideNightBuildings =
           SceneCityNight(cgl, rng, w, h, floorplan, torus, kWidth);
+
+      outsideWireframeBuildings2 =
+          Scene.OutsideWireframeBuildings(cgl, buildings);
+      outsideWireframeBuildings =
+          SceneCityWireframe(cgl, rng, w, h, floorplan, torus, kWidth);
+
+      outsideSketch = SceneSketch(cgl, rng, w, h, buildings);
+
+
     }
     LogInfo("creating buildingcenes done");
 
@@ -508,9 +560,13 @@ class AllScenes {
   }
 
   Scene outsideSteet;
+
   Scene outsideWireframeBuildings;
+  Scene outsideWireframeBuildings2;
+
   Scene outsideNightBuildings;
   Scene outsideNightBuildings2;
+
   Scene outsideSketch;
 
   Scene insidePlasma;
