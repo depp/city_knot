@@ -30,7 +30,10 @@ final HTML.Element gClock = HTML.document.querySelector('#clock');
 
 final HTML.Element gStatus = HTML.document.querySelector('#status');
 
-final HTML.AudioElement gMusic = HTML.document.getElementById("soundtrack");
+final HTML.AudioElement gSoundtrack =
+    HTML.document.querySelector("#soundtrack");
+
+final HTML.Element gMusic = HTML.document.querySelector('#music');
 
 const bool FAST_START_NO_BUILDINGS = false;
 
@@ -347,16 +350,17 @@ class Scene {
   CGL.MeshData mesh;
 }
 
+
 class SceneGOL extends Scene {
   SceneGOL(CGL.ChronosGL cgl, this.w, this.h) {
     CGL.GeometryBuilder torus =
-        InsideTorusKTexture(kHeight ~/ 16, kWidth ~/ 16);
+        InsideTorusKTexture(GOLHeight ~/ 16, GOLWidth ~/ 16);
     program = CGL.RenderProgram(
         "gol", cgl, texturedVertexShader, texturedFragmentShader);
     mesh = CGL.GeometryBuilderToMeshData("gol", program, torus);
 
-    fb = CGL.Framebuffer.Default(cgl, kHeight * 4, kWidth * 4);
-    gol = GOL.Life(cgl, kHeight, kWidth, 4, true);
+    fb = CGL.Framebuffer.Default(cgl, GOLHeight * 4, GOLWidth * 4);
+    gol = GOL.Life(cgl, GOLHeight, GOLWidth, 4, true);
 
     screen = CGL.Framebuffer.Screen(cgl);
 
@@ -802,6 +806,14 @@ void main() {
       CGL.StatsFps(HTML.document.getElementById("stats"), "blue", "gray");
   final params = HashParameters();
   LogInfo("Params: ${params}");
+  if (params.containsKey("demo")) {
+    print("demo mode");
+    for (HTML.Element e in HTML.document.querySelectorAll(".control")) {
+      print("disable control: ${e}");
+      e.style.display = "none";
+    }
+    gMode.value = "demo";
+  }
 
   IntroduceShaderVars();
   GOL.RegisterShaderVars();
@@ -859,11 +871,11 @@ void main() {
       mc.animate(elapsed);
       allScenes.RenderScene(gTheme.value, cgl, perspective, t);
     } else if (gMode.value == "demo") {
-      if (gMusic.ended || gMusic.currentTime == 0.0) {
-        print("Music started ${gMusic.ended} ${gMusic.currentTime}");
-        gMusic.play();
+      if (gSoundtrack.ended || gSoundtrack.currentTime == 0.0) {
+        print("Music started ${gSoundtrack.ended} ${gSoundtrack.currentTime}");
+        gSoundtrack.play();
       } else {
-        t = 1000.0 * gMusic.currentTime;
+        t = 1000.0 * gSoundtrack.currentTime;
         // also check gMusic.ended
         for (ScriptScene s in gScript) {
           if (t < s.durationMs) {
@@ -893,16 +905,16 @@ void main() {
     }
     String cmd = new String.fromCharCodes([e.which]);
     if (cmd == " ") {
-      if (gMusic.paused || gMusic.currentTime == 0.0) {
-        gMusic.play();
+      if (gSoundtrack.paused || gSoundtrack.currentTime == 0.0) {
+        gSoundtrack.play();
       } else {
-        gMusic.pause();
+        gSoundtrack.pause();
       }
     }
   });
 
   // play midi song via mondrianjs
-  HTML.document.querySelector('#music').onClick.listen((HTML.Event ev) {
+  gMusic.onClick.listen((HTML.Event ev) {
     ev.preventDefault();
     ev.stopPropagation();
     playSong();

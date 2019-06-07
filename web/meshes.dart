@@ -18,6 +18,11 @@ const int kHeight = 800 * magicMult; // divisible by 3 and 8
 
 const double kBuildingDim = 20;
 
+// Note, this is too large for most graphic cards and you may want
+// to divide this by 2 or 4 during development
+const int GOLWidth = kWidth;
+const int GOLHeight = kHeight;
+
 /// Like ShapeTorusKnotGeometry but with duplicate Vertices to make it
 /// possible to add aCenter attributes with GenerateWireframeCenters()
 CGL.GeometryBuilder TorusKnotGeometryTriangularWireframeFriendly(
