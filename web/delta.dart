@@ -19,7 +19,7 @@ import 'textures.dart';
 import 'theme.dart' as THEME;
 
 final double zNear = 0.1;
-final double zFar = 20000.0;
+final double zFar = 2000.0;
 final double cameraFov = 60.0;
 
 final HTML.SelectElement gMode =
