@@ -14,6 +14,7 @@ import 'meshes.dart';
 import 'mondrianjs.dart';
 import 'portal.dart' as PORTAL;
 import 'shaders.dart';
+import 'sky.dart' as SKY;
 import 'textures.dart';
 import 'theme.dart' as THEME;
 
@@ -341,6 +342,13 @@ class Scene {
     CGL.Framebuffer.Screen(cgl).Activate(CGL.GL_CLEAR_ALL, 0, 0, w, h);
   }
 
+  Scene.Sky(CGL.ChronosGL cgl, int w, int h) {
+    program = CGL.RenderProgram(
+      "sky", cgl, SKY.VertexShader, SKY.FragmentShader);
+    mesh = CGL.ShapeQuad(program, 1);
+    mat = CGL.Material('sky');
+  }
+
   void Draw(CGL.ChronosGL cgl, CGL.Perspective perspective) {
     program.Draw(mesh, [perspective, mat]);
   }
@@ -626,6 +634,7 @@ class AllScenes {
     insideGOL2 = SceneGOL.Variant2(cgl, w, h, rng);
     insideFractal = Scene.InsideFractal(cgl, w, h);
 
+    sky = Scene.Sky(cgl, w, h);
     portal = Scene.Portal(cgl);
     finale = Scene.Finale(cgl);
 
@@ -653,6 +662,7 @@ class AllScenes {
 
   Scene portal;
   Scene finale;
+  Scene sky;
 
   void UpdateCameras(String name, CGL.Perspective perspective, double timeMs,
       TorusKnotCamera tkc, InitialApproachCamera iac, CGL.OrbitCamera oc) {
@@ -766,6 +776,7 @@ class AllScenes {
       case "night-outside":
         outsideNightBuildings.Draw(cgl, perspective);
         outsideSteet.Draw(cgl, perspective);
+        sky.Draw(cgl, perspective);
         portal.Draw(cgl, perspective);
         break;
       case "night-orbit":
@@ -818,6 +829,7 @@ void main() {
   IntroduceShaderVars();
   GOL.RegisterShaderVars();
   FRACTAL.RegisterShaderVars();
+  SKY.RegisterShaderVars();
 
   final HTML.CanvasElement canvas =
       HTML.document.querySelector('#webgl-canvas');
