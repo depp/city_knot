@@ -275,6 +275,10 @@ class Building {
   int offset;
   double height;
   int kind;
+
+  String toString() {
+    return "plot: ${plot} ${base}  ${offset} ${height} ${kind}";
+  }
 }
 
 class PosInt {
@@ -421,7 +425,8 @@ class Floorplan {
           count++;
         } else {
           if (count > 1) {
-            out.add(GEOMETRY.Rect(x * 1.0, (y - count) * 1.0, 1.0, count * 1.0));
+            out.add(
+                GEOMETRY.Rect(x * 1.0, (y - count) * 1.0, 1.0, count * 1.0));
           }
           count = 0;
         }
@@ -436,7 +441,8 @@ class Floorplan {
           count++;
         } else {
           if (count > 1) {
-            out.add(GEOMETRY.Rect((x - count) * 1.0, y * 1.0, count * 1.0, 1.0));
+            out.add(
+                GEOMETRY.Rect((x - count) * 1.0, y * 1.0, count * 1.0, 1.0));
           }
           count = 0;
         }
@@ -574,7 +580,7 @@ class Floorplan {
         if (w < 9) continue;
         if (h < 9) continue;
 
-        double altitude = 20;
+        double altitude = 10.0 + rng.nextInt(15);
         int offset = 1;
         int kind = kTileBuildingSimple;
         plot.x = x * 1.0;
@@ -583,11 +589,28 @@ class Floorplan {
         plot.h = h * 1.0;
         // TODO
 
+        /*
         if (y < _h * 0.1 || y > _h * 0.7) {
           if (0 == rng.nextInt(4)) {
             altitude = 20.0 + rng.nextInt(15) * 4;
           }
         }
+        */
+        if (rng.nextInt(4) == 1) {
+          altitude = 45.0 + rng.nextInt(10);
+          switch (rng.nextInt(3)) {
+            case 0:
+              kind = kTileBuildingTower;
+              break;
+            case 1:
+              kind = kTileBuildingBlocky;
+              break;
+            case 2:
+              kind = kTileBuildingModern;
+              break;
+          }
+        }
+
         /*
         if (_wc.IsWithinCenter(plot)) {
           altitude = 15.0 + rng.nextInt(15);

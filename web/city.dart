@@ -143,6 +143,7 @@ void _AddOneBuilding(
     RoofOptions roofOpt,
     THEME.RoofFeatures rf,
     FLOORPLAN.Building b) {
+    //print ("building ${b}");
   switch (b.kind) {
     case FLOORPLAN.kTileBuildingTower:
       var opt = BuildingTowerOptions(rng, params, colors, b.height > 40.0);
@@ -214,7 +215,7 @@ Shape MakeBuildings(
 
     Rect oldbase = b.base;
 
-    b.base = Rect(-b.base.w / 2, -b.base.h / 2, b.base.w, b.base.h);
+    b.base = Rect(-b.base.w,  -b.base.h , b.base.w * 2.0, b.base.h * 2.0);
     _AddOneBuilding(tmp, rng, params, colors, roofOpt, rf, b);
     b.base = oldbase;
 
