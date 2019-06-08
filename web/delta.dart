@@ -119,8 +119,8 @@ class TorusKnotCamera extends CGL.Spatial {
   final VM.Vector3 v1 = VM.Vector3.zero();
   final VM.Vector3 v2 = VM.Vector3.zero();
 
-  void animate(double timeMs, String route) {
-    double u = timeMs / 6000;
+  void animate(double timeMs, double speed, String route) {
+    double u = timeMs * speed / 6000;
     CGL.TorusKnotGetPos(u, q, p, radius, heightScale, point);
     //p1.scale((p1.length + kTubeRadius * 1.1) / p1.length);
 
@@ -679,10 +679,10 @@ class AllScenes {
   Scene sky2;
 
   // Note: updates tkc as a side-effect
-  void PlacePortal(double timeMs, double pos, double radius, TorusKnotCamera tkc) {
+  void PlacePortal(double timeMs, double speed, double pos, double radius, TorusKnotCamera tkc) {
     // print("portal ${timeMs}");
     tkc.SetTubeRadius(radius);
-    tkc.animate(pos, gCameraRoute.value);
+    tkc.animate(pos, speed, gCameraRoute.value);
     VM.Matrix4 mat = VM.Matrix4.identity()
       ..rotateZ(timeMs / 500.0)
       ..setTranslation(tkc.point);
@@ -693,6 +693,7 @@ class AllScenes {
       String name,
       CGL.Perspective perspective,
       double timeMs,
+      double speed,
       double radius,
       TorusKnotCamera tkc,
       InitialApproachCamera iac,
@@ -713,7 +714,7 @@ class AllScenes {
       case "sketch-outside":
         tkc.SetTubeRadius(kTubeRadius + 50.0);
         perspective.UpdateCamera(tkc);
-        tkc.animate(timeMs, gCameraRoute.value);
+        tkc.animate(timeMs, speed, gCameraRoute.value);
         break;
       case "plasma-inside":
       case "wireframe-inside-hexagon":
@@ -724,7 +725,7 @@ class AllScenes {
       case "fractal-inside":
         tkc.SetTubeRadius(1.0);
         perspective.UpdateCamera(tkc);
-        tkc.animate(timeMs, gCameraRoute.value);
+        tkc.animate(timeMs, speed, gCameraRoute.value);
         break;
       case "finale":
         oc.azimuth = timeMs / 1000.0;
@@ -820,10 +821,11 @@ class AllScenes {
 }
 
 class ScriptScene {
-  ScriptScene(this.name, this.durationMs, this.route, this.radius);
+  ScriptScene(this.name, this.durationMs, this.speed, this.route, this.radius);
 
   final String name;
   final double durationMs;
+  final double speed;
   final int route;
   final double radius;
 }
@@ -831,13 +833,13 @@ class ScriptScene {
 double kTimeUnit = 1000;
 
 final List<ScriptScene> gScript = [
-  ScriptScene("night-orbit", 16.0 * kTimeUnit, 0, 0.0),
-  ScriptScene("night-outside", 32.0 * kTimeUnit, 9, kTubeRadius + 50.0),
-  ScriptScene("gol-inside", 32.0 * kTimeUnit, 6, 1.0),
-  ScriptScene("wireframe-outside", 32.0 * kTimeUnit, 3, kTubeRadius + 50.0),
-  ScriptScene("gol2-inside", 16.0 * kTimeUnit, 6, 1.0),
-  ScriptScene("sketch-outside", 32.0 * kTimeUnit, 0, kTubeRadius + 50.0),
-  ScriptScene("finale", 16.0 * kTimeUnit, 0, 0.0),
+  ScriptScene("night-orbit", 16.0 * kTimeUnit, 1.0, 0, 0.0),
+  ScriptScene("night-outside", 32.0 * kTimeUnit, 1.0, 9, kTubeRadius + 50.0),
+  ScriptScene("gol-inside", 32.0 * kTimeUnit, 1.0, 6, 1.0),
+  ScriptScene("wireframe-outside", 32.0 * kTimeUnit, 1.0, 3, kTubeRadius + 50.0),
+  ScriptScene("gol2-inside", 16.0 * kTimeUnit, 1.0, 6, 1.0),
+  ScriptScene("sketch-outside", 32.0 * kTimeUnit, 1.0, 0, kTubeRadius + 50.0),
+  ScriptScene("finale", 16.0 * kTimeUnit, 1.0, 0, 0.0),
 ];
 
 void main() {
@@ -882,7 +884,7 @@ void main() {
   final Math.Random rng = Math.Random(0);
 
   tkc.SetTubeRadius(kTubeRadius + 50.0);
-  tkc.animate(0, "9");
+  tkc.animate(0, 1.0, "9");
   iac.ci.setDst(tkc.transform);
   iac.cameraFinalPos.setFrom(tkc.point);
 
@@ -920,9 +922,9 @@ void main() {
         for (ScriptScene s in gScript) {
           if (t < s.durationMs) {
             gCameraRoute.selectedIndex = s.route ~/ 3;
-            allScenes.PlacePortal(t, s.durationMs, s.radius, tkc);
+            allScenes.PlacePortal(t, s.durationMs, s.speed, s.radius, tkc);
             allScenes.UpdateCameras(
-                s.name, perspective, t, s.radius, tkc, iac, oc);
+                s.name, perspective, t, s.speed, s.radius, tkc, iac, oc);
             allScenes.RenderScene(s.name, cgl, perspective, t);
             gTheme.value = s.name;
             break;
@@ -936,9 +938,9 @@ void main() {
         radius = 1.0;
       }
       // place portal early so we can see it right aways
-      allScenes.PlacePortal(t, 10.0 * 1000, radius, tkc);
+      allScenes.PlacePortal(t, 10000, 1.0, radius, tkc);
       allScenes.UpdateCameras(
-          gTheme.value, perspective, t, radius, tkc, iac, oc);
+          gTheme.value, perspective, t, 1.0, radius, tkc, iac, oc);
       allScenes.RenderScene(gTheme.value, cgl, perspective, t);
     }
 
