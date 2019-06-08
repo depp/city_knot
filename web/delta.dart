@@ -921,7 +921,7 @@ void main() {
         radius = 1.0;
       }
       // place portal early so we can see it right aways
-      allScenes.PlacePortal(t, t + 1000.0, radius, tkc);
+      allScenes.PlacePortal(t, 10.0 * 1000, radius, tkc);
       allScenes.UpdateCameras(
           gTheme.value, perspective, t, radius, tkc, iac, oc);
       allScenes.RenderScene(gTheme.value, cgl, perspective, t);
