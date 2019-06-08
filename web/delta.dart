@@ -289,7 +289,7 @@ class Scene {
     mat = CGL.Material("portal")
       ..SetUniform(CGL.uModelMatrix, VM.Matrix4.identity())
       ..SetUniform(CGL.uTime, 0.0)
-      ..SetUniform(CGL.uPointSize, 400.0);
+      ..SetUniform(CGL.uPointSize, 300.0);
 
     program = CGL.RenderProgram(
         "portal", cgl, PORTAL.VertexShader, PORTAL.FragmentShader);
@@ -350,7 +350,6 @@ class Scene {
   CGL.MeshData mesh;
 }
 
-
 class SceneGOL extends Scene {
   SceneGOL(CGL.ChronosGL cgl, this.w, this.h) {
     CGL.GeometryBuilder torus =
@@ -401,9 +400,9 @@ class SceneGOL extends Scene {
   }
 
   int count = 0;
-  CGL.Framebuffer fb;
   int w, h;
   GOL.Life gol;
+  CGL.Framebuffer fb;
   CGL.Framebuffer screen;
 }
 
@@ -581,7 +580,7 @@ class AllScenes {
     LogInfo("creating building scenes");
     if (FAST_START_NO_BUILDINGS) {
       LogInfo("NO BUINDINGS");
-      outsideSteet = Scene();
+      outsideStreet = Scene();
 
       outsideSketch = Scene();
       outsideSketch2 = Scene();
@@ -597,7 +596,7 @@ class AllScenes {
       final CGL.GeometryBuilder buildings =
           CITY.MakeSimpleBuildings(floorplan.GetBuildings(), torus, kWidth);
 
-      outsideSteet = Scene.OutsideStreet(cgl, floorplan, torus);
+      outsideStreet = Scene.OutsideStreet(cgl, floorplan, torus);
 
       outsideNightBuildings2 = Scene.OutsideNightBuildings(cgl, buildings);
       outsideNightBuildings =
@@ -633,7 +632,7 @@ class AllScenes {
     CGL.Framebuffer.Screen(cgl).Activate(CGL.GL_CLEAR_ALL, 0, 0, w, h);
   }
 
-  Scene outsideSteet;
+  Scene outsideStreet;
 
   Scene outsideWireframeBuildings;
   Scene outsideWireframeBuildings2;
@@ -654,8 +653,25 @@ class AllScenes {
   Scene portal;
   Scene finale;
 
-  void UpdateCameras(String name, CGL.Perspective perspective, double timeMs,
-      TorusKnotCamera tkc, InitialApproachCamera iac, CGL.OrbitCamera oc) {
+  // Note: updates tkc as a side-effect
+  void PlacePortal(double timeMs, double pos, double radius, TorusKnotCamera tkc) {
+    // print("portal ${timeMs}");
+    tkc.SetTubeRadius(radius);
+    tkc.animate(pos, gCameraRoute.value);
+    VM.Matrix4 mat = VM.Matrix4.identity()
+      ..rotateZ(timeMs / 500.0)
+      ..setTranslation(tkc.point);
+    portal.mat.ForceUniform(CGL.uModelMatrix, mat);
+  }
+
+  void UpdateCameras(
+      String name,
+      CGL.Perspective perspective,
+      double timeMs,
+      double radius,
+      TorusKnotCamera tkc,
+      InitialApproachCamera iac,
+      CGL.OrbitCamera oc) {
     switch (name) {
       case "wireframe-orbit":
         perspective.UpdateCamera(iac);
@@ -671,10 +687,6 @@ class AllScenes {
       case "night-outside":
       case "sketch-outside":
         tkc.SetTubeRadius(kTubeRadius + 50.0);
-        // hard coded duration
-        tkc.animate(25000, gCameraRoute.value);
-        (portal.mat.GetUniforms()[CGL.uModelMatrix] as VM.Matrix4)
-            .setTranslation(tkc.point);
         perspective.UpdateCamera(tkc);
         tkc.animate(timeMs, gCameraRoute.value);
         break;
@@ -686,10 +698,6 @@ class AllScenes {
       case "gol2-inside":
       case "fractal-inside":
         tkc.SetTubeRadius(1.0);
-        // hard coded duration
-        tkc.animate(20000, gCameraRoute.value);
-        (portal.mat.GetUniforms()[CGL.uModelMatrix] as VM.Matrix4)
-            .setTranslation(tkc.point);
         perspective.UpdateCamera(tkc);
         tkc.animate(timeMs, gCameraRoute.value);
         break;
@@ -723,12 +731,12 @@ class AllScenes {
     switch (name) {
       case "wireframe-outside":
         outsideWireframeBuildings.Draw(cgl, perspective);
-        outsideSteet.Draw(cgl, perspective);
+        outsideStreet.Draw(cgl, perspective);
         portal.Draw(cgl, perspective);
         break;
       case "wireframe-orbit":
         outsideWireframeBuildings.Draw(cgl, perspective);
-        outsideSteet.Draw(cgl, perspective);
+        outsideStreet.Draw(cgl, perspective);
         break;
       case "plasma-inside":
         outsideWireframeBuildings.Draw(cgl, perspective);
@@ -760,17 +768,17 @@ class AllScenes {
         break;
       case "sketch-outside":
         outsideSketch.Draw(cgl, perspective);
-        outsideSteet.Draw(cgl, perspective);
+        outsideStreet.Draw(cgl, perspective);
         portal.Draw(cgl, perspective);
         break;
       case "night-outside":
         outsideNightBuildings.Draw(cgl, perspective);
-        outsideSteet.Draw(cgl, perspective);
+        outsideStreet.Draw(cgl, perspective);
         portal.Draw(cgl, perspective);
         break;
       case "night-orbit":
         outsideNightBuildings.Draw(cgl, perspective);
-        outsideSteet.Draw(cgl, perspective);
+        outsideStreet.Draw(cgl, perspective);
         break;
       case "finale":
         finale.Draw(cgl, perspective);
@@ -782,23 +790,24 @@ class AllScenes {
 }
 
 class ScriptScene {
-  ScriptScene(this.name, this.durationMs, this.route);
+  ScriptScene(this.name, this.durationMs, this.route, this.radius);
 
   final String name;
   final double durationMs;
   final int route;
+  final double radius;
 }
 
 double kTimeUnit = 1000;
 
 final List<ScriptScene> gScript = [
-  ScriptScene("night-orbit", 25.0 * kTimeUnit, 0),
-  ScriptScene("night-outside", 25.0 * kTimeUnit, 9),
-  ScriptScene("gol-inside", 20.0 * kTimeUnit, 6),
-  ScriptScene("wireframe-outside", 25.0 * kTimeUnit, 3),
-  ScriptScene("gol2-inside", 20.0 * kTimeUnit, 6),
-  ScriptScene("sketch-outside", 25.0 * kTimeUnit, 0),
-  ScriptScene("finale", 25.0 * kTimeUnit, 0),
+  ScriptScene("night-orbit", 25.0 * kTimeUnit, 0, 0.0),
+  ScriptScene("night-outside", 25.0 * kTimeUnit, 9, kTubeRadius + 50.0),
+  ScriptScene("gol-inside", 20.0 * kTimeUnit, 6, 1.0),
+  ScriptScene("wireframe-outside", 25.0 * kTimeUnit, 3, kTubeRadius + 50.0),
+  ScriptScene("gol2-inside", 20.0 * kTimeUnit, 6, 1.0),
+  ScriptScene("sketch-outside", 25.0 * kTimeUnit, 0, kTubeRadius + 50.0),
+  ScriptScene("finale", 25.0 * kTimeUnit, 0, 0.0),
 ];
 
 void main() {
@@ -880,7 +889,9 @@ void main() {
         for (ScriptScene s in gScript) {
           if (t < s.durationMs) {
             gCameraRoute.selectedIndex = s.route ~/ 3;
-            allScenes.UpdateCameras(s.name, perspective, t, tkc, iac, oc);
+            allScenes.PlacePortal(t, s.durationMs, s.radius, tkc);
+            allScenes.UpdateCameras(
+                s.name, perspective, t, s.radius, tkc, iac, oc);
             allScenes.RenderScene(s.name, cgl, perspective, t);
             gTheme.value = s.name;
             break;
@@ -889,7 +900,14 @@ void main() {
         }
       }
     } else {
-      allScenes.UpdateCameras(gTheme.value, perspective, t, tkc, iac, oc);
+      double radius = kTubeRadius + 50.0;
+      if (gMode.value.contains("inside")) {
+        radius = 1.0;
+      }
+      // place portal early so we can see it right aways
+      allScenes.PlacePortal(t, t + 1000.0, radius, tkc);
+      allScenes.UpdateCameras(
+          gTheme.value, perspective, t, radius, tkc, iac, oc);
       allScenes.RenderScene(gTheme.value, cgl, perspective, t);
     }
 

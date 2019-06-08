@@ -14,24 +14,20 @@ float rand(vec2 xy){
 }
      
 vec3 noise(vec3 orig, float t) {
-       return vec3(0.85 - rand(vec2(t + float(gl_VertexID), orig.x)),
-                   1.0 + rand(vec2(t + float(gl_VertexID), orig.y)),
-                   0.85 - rand(vec2(t + float(gl_VertexID), orig.z)));
+       return vec3(rand(vec2(t + float(gl_VertexID), orig.x)),
+                   rand(vec2(t + float(gl_VertexID), orig.y)),
+                   rand(vec2(t + float(gl_VertexID), orig.z)));
 }
 
 void main() {
     vec3 pos = ${aPosition} + 2.0 * noise(${aPosition}, ${uTime});
 
     gl_Position = ${uPerspectiveViewMatrix} * ${uModelMatrix} * vec4(pos, 1.0);
-                  
+                   
     gl_PointSize = ${uPointSize} / gl_Position.z;
     
-     ${vColor} = vec3(0.5, 0.5, 0.5);
-    /*
-    ${vColor}.r = sin(${aPosition}.x)/2.0+0.5;
-    ${vColor}.g = cos(${aPosition}.y)/2.0+0.5;
-    ${vColor}.b = sin(${aPosition}.z)/2.0+0.5;
-    */
+     //${vColor} = vec3(0.5, 0.5, 0.5);
+    ${vColor} = noise(${aPosition}, ${uTime} * 2.0)  * 0.3 + vec3(0.3, 0.3, 0.3); 
 }
 """
   ]);
@@ -51,7 +47,7 @@ MeshData MakePortal(RenderProgram program) {
   final detail = 4;
   final MeshData torus = ShapeTorusKnot(program,
       radius: 1.0 * 20,
-      tubeRadius: 0.4 * 20,
+      tubeRadius: 0.3 * 20,
       computeNormals: true,
       segmentsR: 256 * detail,
       segmentsT: 16 * detail);
