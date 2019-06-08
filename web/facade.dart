@@ -597,8 +597,9 @@ CGL.Material MakeSolid(CGL.ChronosGL cgl) {
 
 CGL.Material MakeLogo(
     CGL.ChronosGL cgl, List<String> logo, RGB textColor, RGB wallColor) {
+   final List<String> logos = GetBuildingLogos(Math.Random());
   return MakeStandardTextureMaterial(
-      "logos", cgl, MakeCanvasBuildingLogos(logo, textColor, wallColor));
+      "logos", cgl, MakeCanvasBuildingLogos(logos, textColor, wallColor));
 }
 
 CGL.Material MakeLightTrims(CGL.ChronosGL cgl) {
