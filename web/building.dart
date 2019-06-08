@@ -488,12 +488,25 @@ void _AddFancyRoof(Shape shape, Math.Random rng, Rect area, double level,
     double h = Math.max(3.0 - i, 1.0);
     base.IncreaseByOffset(-1.0);
     //LogInfo("fancy roof ${ledgeBase}");
-    switch (rng.nextInt(5)) {
-      case 1:
+    switch (rng.nextInt(2)) {
+      case 0:
         if (rf.allowLightStrip && rng.nextInt(6) == 0) {
           _AddLightStrip(
               shape, rng, base, level, h, o.trimOtherMat, o.trimLightMat);
           //numFeatureLightStrip++;
+        } else {
+          _AddBox(shape, base, h, level, o.ledgeMat);
+        }
+        break;
+      case 1:
+        if (rf.allowLogo &&
+            numFeatureLogo == 0 &&
+            h == 3.0 &&
+            rng.nextInt(5) >= 0) {
+          int logoIndex = o.logo_index;
+          _AddLogoStrip(
+              shape, rng, base, level, h, o.logoMat, o.logoOtherMat, logoIndex);
+          numFeatureLogo++;
         } else {
           _AddBox(shape, base, h, level, o.ledgeMat);
         }
@@ -515,19 +528,6 @@ void _AddFancyRoof(Shape shape, Math.Random rng, Rect area, double level,
           numFeatureGlobeLight++;
         }
         _AddBox(shape, base, h, level, o.ledgeMat);
-        break;
-      case 3:
-        if (rf.allowLogo &&
-            numFeatureLogo == 0 &&
-            h == 3.0 &&
-            rng.nextInt(5) >= 0) {
-          int logoIndex = o.logo_index;
-          _AddLogoStrip(
-              shape, rng, base, level, h, o.logoMat, o.logoOtherMat, logoIndex);
-          numFeatureLogo++;
-        } else {
-          _AddBox(shape, base, h, level, o.ledgeMat);
-        }
         break;
       default:
         _AddBox(shape, base, h, level, o.ledgeMat);
@@ -708,5 +708,3 @@ void AddBuildingBlocky(Shape g, Math.Random rng, Rect base, double totalHeight,
   }
   _AddBox(g, base, kBaseHeight * 1.0, 0.0, o.baseMat);
 }
-
-
