@@ -193,13 +193,14 @@ class InitialApproachCamera extends CGL.Spatial {
 
   void animate(double timeMs) {
     range = (transform.getTranslation() - ci.tdst).length;
+    double dur = 11000;
+    double dur2 = 16000;
 
-    // hard coded duration
-    if (timeMs >= 20000) {
-      if (lastTime < 20000) {
+    if (timeMs >= dur) {
+      if (lastTime < dur) {
         ci.setSrc(transform);
       }
-      double t = (timeMs - 20000) / (25000.0 - 20000.0);
+      double t = (timeMs - dur) / (dur2 - dur);
       if (t > 1.0) {
         return;
       }
@@ -755,6 +756,7 @@ class AllScenes {
       case "wireframe-outside":
         outsideWireframeBuildings.Draw(cgl, perspective);
         outsideStreet.Draw(cgl, perspective);
+        sky.Draw(cgl, perspective);
         portal.Draw(cgl, perspective);
         break;
       case "wireframe-orbit":
@@ -828,13 +830,13 @@ class ScriptScene {
 double kTimeUnit = 1000;
 
 final List<ScriptScene> gScript = [
-  ScriptScene("night-orbit", 25.0 * kTimeUnit, 0, 0.0),
-  ScriptScene("night-outside", 25.0 * kTimeUnit, 9, kTubeRadius + 50.0),
-  ScriptScene("gol-inside", 20.0 * kTimeUnit, 6, 1.0),
-  ScriptScene("wireframe-outside", 25.0 * kTimeUnit, 3, kTubeRadius + 50.0),
-  ScriptScene("gol2-inside", 20.0 * kTimeUnit, 6, 1.0),
-  ScriptScene("sketch-outside", 25.0 * kTimeUnit, 0, kTubeRadius + 50.0),
-  ScriptScene("finale", 25.0 * kTimeUnit, 0, 0.0),
+  ScriptScene("night-orbit", 16.0 * kTimeUnit, 0, 0.0),
+  ScriptScene("night-outside", 32.0 * kTimeUnit, 9, kTubeRadius + 50.0),
+  ScriptScene("gol-inside", 32.0 * kTimeUnit, 6, 1.0),
+  ScriptScene("wireframe-outside", 32.0 * kTimeUnit, 3, kTubeRadius + 50.0),
+  ScriptScene("gol2-inside", 16.0 * kTimeUnit, 6, 1.0),
+  ScriptScene("sketch-outside", 32.0 * kTimeUnit, 0, kTubeRadius + 50.0),
+  ScriptScene("finale", 16.0 * kTimeUnit, 0, 0.0),
 ];
 
 void main() {
