@@ -79,14 +79,13 @@ void ExtractTransformsAtTorusSurfaceCity(CGL.GeometryBuilder torus, int kWidth,
   VM.Vector3 dir1 = centerW - center;
   VM.Vector3 dir2 = centerH - center;
   VM.Vector3 dir3 = dir1.cross(dir2)..normalize();
-  VM.Vector3 pos = center + dir3.scaled(1.0);
+  VM.Vector3 pos = center.scaled(0.99);
   //node.setPosFromVec(pos);
-
   //VM.setViewMatrix(node.transform, pos, center, dir1);
   VM.setViewMatrix(mat, VM.Vector3.zero(), dir3, dir1);
   mat.invert();
-  mat.setTranslation(pos);
   mat.rotateX(-Math.pi / 2.0);
+  mat.setTranslation(pos);
   // TODO: this is not quite correct
   mat.copyRotation(matNormal);
 }
