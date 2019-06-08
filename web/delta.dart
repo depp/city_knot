@@ -19,7 +19,7 @@ import 'textures.dart';
 import 'theme.dart' as THEME;
 
 final double zNear = 0.1;
-final double zFar = 2000.0;
+final double zFar = 20000.0;
 final double cameraFov = 60.0;
 
 final HTML.SelectElement gMode =
@@ -209,7 +209,7 @@ class InitialApproachCamera extends CGL.Spatial {
       azimuth = Math.pi + timeMs * 0.0001;
       azimuth = azimuth % (2.0 * Math.pi);
       polar = polar.clamp(-Math.pi / 2 + 0.1, Math.pi / 2 - 0.1);
-      double r = radius - timeMs * 0.1;
+      double r = (radius - timeMs * 0.1) * 0.3;
       setPosFromSpherical(r * 2.0, azimuth, polar);
       addPosFromVec(_lookAtPos);
       lookAt(_lookAtPos);
@@ -349,6 +349,13 @@ class Scene {
   Scene.Sky(CGL.ChronosGL cgl, int w, int h) {
     program = CGL.RenderProgram(
       "sky", cgl, SKY.VertexShader, SKY.FragmentShader);
+    mesh = CGL.ShapeQuad(program, 1);
+    mat = CGL.Material('sky');
+  }
+
+  Scene.Sky2(CGL.ChronosGL cgl, int w, int h) {
+    program = CGL.RenderProgram(
+      "sky2", cgl, SKY.VertexShader, SKY.GradientFragmentShader);
     mesh = CGL.ShapeQuad(program, 1);
     mat = CGL.Material('sky');
   }
@@ -638,6 +645,7 @@ class AllScenes {
     insideFractal = Scene.InsideFractal(cgl, w, h);
 
     sky = Scene.Sky(cgl, w, h);
+    sky2 = Scene.Sky2(cgl, w, h);
     portal = Scene.Portal(cgl);
     finale = Scene.Finale(cgl);
 
@@ -666,6 +674,7 @@ class AllScenes {
   Scene portal;
   Scene finale;
   Scene sky;
+  Scene sky2;
 
   // Note: updates tkc as a side-effect
   void PlacePortal(double timeMs, double pos, double radius, TorusKnotCamera tkc) {
@@ -783,20 +792,23 @@ class AllScenes {
       case "sketch-outside":
         outsideSketch.Draw(cgl, perspective);
         outsideStreet.Draw(cgl, perspective);
+        sky.Draw(cgl, perspective);
         portal.Draw(cgl, perspective);
         break;
       case "night-outside":
         outsideNightBuildings.Draw(cgl, perspective);
         outsideStreet.Draw(cgl, perspective);
-        sky.Draw(cgl, perspective);
+        sky2.Draw(cgl, perspective);
         portal.Draw(cgl, perspective);
         break;
       case "night-orbit":
         outsideNightBuildings.Draw(cgl, perspective);
         outsideStreet.Draw(cgl, perspective);
+        sky2.Draw(cgl, perspective);
         break;
       case "finale":
         finale.Draw(cgl, perspective);
+        sky2.Draw(cgl, perspective);
         break;
       default:
         assert(false, "unexepected theme ${name}");

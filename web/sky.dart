@@ -14,7 +14,7 @@ final ShaderObject VertexShader = ShaderObject("SkyV")
     '''
 void main() {
     mat3 invcamera = inverse(mat3(uPerspectiveViewMatrix));
-    vec3 clippos = vec3(aTexUV * 2.0 - 1.0, 0.9999); 
+    vec3 clippos = vec3(aTexUV * 2.0 - 1.0, 0.99995);
     vRayDirection = invcamera * clippos;
     gl_Position = vec4(clippos, 1.0);
 }
