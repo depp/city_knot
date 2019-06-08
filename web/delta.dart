@@ -605,10 +605,11 @@ class AllScenes {
     } else {
       final Floorplan floorplan = Floorplan(kHeight, kWidth, 10, rng);
       final CGL.GeometryBuilder torus = TorusKnot(kHeight, kWidth);
+      final CGL.GeometryBuilder torusLowRez = TorusKnot(kHeight ~/ 8, kWidth ~/ 8);
       final CGL.GeometryBuilder buildings =
           CITY.MakeSimpleBuildings(floorplan.GetBuildings(), torus, kWidth);
 
-      outsideStreet = Scene.OutsideStreet(cgl, floorplan, torus);
+      outsideStreet = Scene.OutsideStreet(cgl, floorplan, torusLowRez);
 
       outsideNightBuildings2 = Scene.OutsideNightBuildings(cgl, buildings);
       outsideNightBuildings =
