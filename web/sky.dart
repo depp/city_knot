@@ -33,6 +33,7 @@ void main() {
 
 final ShaderObject FragmentShader = ShaderObject("SkyFClouds")
   ..AddVaryingVars(['vRayDirection'])
+  ..AddUniformVars(['uPerspectiveViewMatrix'])
   ..SetBody([
     '''
 const uint UI0 = 1597334673U;
@@ -126,10 +127,10 @@ vec4 render(in vec3 origin, in vec3 dir, float jitter) {
     return color;
 }
 
-
 void main() {
+    vec3 origin = uPerspectiveViewMatrix[3].xyz * -0.0025;
     vec3 dir = normalize(vRayDirection);
-    oFragColor = render(vec3(0.0), dir, 0.0);
+    oFragColor = render(origin, dir, 0.0);
 }
       '''
   ]);

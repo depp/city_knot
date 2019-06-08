@@ -18,6 +18,10 @@ import 'sky.dart' as SKY;
 import 'textures.dart';
 import 'theme.dart' as THEME;
 
+final double zNear = 0.1;
+final double zFar = 2000.0;
+final double cameraFov = 60.0;
+
 final HTML.SelectElement gMode =
     HTML.document.querySelector('#mode') as HTML.SelectElement;
 
@@ -857,8 +861,8 @@ void main() {
 
   // Misc
   final CGL.Perspective perspective =
-      CGL.PerspectiveResizeAware(cgl, canvas, tkc, 0.1, 20000.0)
-        ..UpdateFov(60.0);
+      CGL.PerspectiveResizeAware(cgl, canvas, tkc, zNear, zFar)
+        ..UpdateFov(cameraFov);
 
   final Math.Random rng = Math.Random(0);
 
@@ -917,7 +921,7 @@ void main() {
         radius = 1.0;
       }
       // place portal early so we can see it right aways
-      allScenes.PlacePortal(t, t + 1000.0, radius, tkc);
+      allScenes.PlacePortal(t, 10.0 * 1000, radius, tkc);
       allScenes.UpdateCameras(
           gTheme.value, perspective, t, radius, tkc, iac, oc);
       allScenes.RenderScene(gTheme.value, cgl, perspective, t);
