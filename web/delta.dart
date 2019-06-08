@@ -836,8 +836,8 @@ final List<ScriptScene> gScript = [
   ScriptScene("night-orbit", 16.0 * kTimeUnit, 1.0, 0, 0.0),
   ScriptScene("night-outside", 32.0 * kTimeUnit, 1.0, 9, kTubeRadius + 50.0),
   ScriptScene("gol-inside", 32.0 * kTimeUnit, 1.0, 6, 1.0),
-  ScriptScene("wireframe-outside", 32.0 * kTimeUnit, 1.0, 3, kTubeRadius + 50.0),
-  ScriptScene("gol2-inside", 16.0 * kTimeUnit, 1.0, 6, 1.0),
+  ScriptScene("wireframe-outside", 32.0 * kTimeUnit, 1.2, 3, kTubeRadius + 50.0),
+  ScriptScene("gol2-inside", 16.0 * kTimeUnit, 2.0, 6, 1.0),
   ScriptScene("sketch-outside", 32.0 * kTimeUnit, 1.0, 0, kTubeRadius + 50.0),
   ScriptScene("finale", 16.0 * kTimeUnit, 1.0, 0, 0.0),
 ];
