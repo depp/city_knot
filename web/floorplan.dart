@@ -648,11 +648,11 @@ final Map<int, VM.Vector3> kTileToColorsExtrame = {
   kTileBuildingBorder: VM.Vector3(0.0, 0.0, 1.0),
 };
 
-final kDarkGray = VM.Vector3(0.1, 0.1, 0.1);
+final kDarkGray = VM.Vector3(0.05, 0.05, 0.05);
 
 final Map<int, VM.Vector3> kTileToColorsStandard = {
   kTileEmpty: kDarkGray,
-  kTileLane: VM.Vector3(0.25, 0.25, 0.25),
+  kTileLane: VM.Vector3(0.1, 0.1, 0.1),
   kTileSidewalk: kDarkGray,
   kTileSidewalkLight: kDarkGray,
   kTileDivider: kDarkGray,
@@ -678,7 +678,7 @@ HTML.CanvasElement RenderCanvasWorldMap(WorldMap wm,
   for (int x = 0; x < w; x++) {
     for (int y = 0; y < h; y++) {
       int tile = FloorplanGetTileType(wm.GetTile(x, y));
-      if (tile == kTileEmpty) continue;
+      //if (tile == kTileEmpty) continue;
 
       VM.Vector3 color = tileMap[tile];
       final int ix = w - x - 1;
