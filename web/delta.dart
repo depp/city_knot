@@ -842,7 +842,7 @@ void main() {
       CGL.StatsFps(HTML.document.getElementById("stats"), "blue", "gray");
   final params = HashParameters();
   LogInfo("Params: ${params}");
-  if (params.containsKey("demo")) {
+  if (!params.containsKey("develop")) {
     print("demo mode");
     for (HTML.Element e in HTML.document.querySelectorAll(".control")) {
       print("disable control: ${e}");
