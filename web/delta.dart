@@ -18,6 +18,10 @@ import 'sky.dart' as SKY;
 import 'textures.dart';
 import 'theme.dart' as THEME;
 
+final double zNear = 0.1;
+final double zFar = 20000.0;
+final double cameraFov = 60.0;
+
 final HTML.SelectElement gMode =
     HTML.document.querySelector('#mode') as HTML.SelectElement;
 
@@ -857,8 +861,8 @@ void main() {
 
   // Misc
   final CGL.Perspective perspective =
-      CGL.PerspectiveResizeAware(cgl, canvas, tkc, 0.1, 20000.0)
-        ..UpdateFov(60.0);
+      CGL.PerspectiveResizeAware(cgl, canvas, tkc, zNear, zFar)
+        ..UpdateFov(cameraFov);
 
   final Math.Random rng = Math.Random(0);
 
