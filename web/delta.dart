@@ -19,7 +19,7 @@ import 'textures.dart';
 import 'theme.dart' as THEME;
 
 final double zNear = 0.1;
-final double zFar = 2000.0;
+final double zFar = 20000.0;
 final double cameraFov = 60.0;
 
 final HTML.SelectElement gMode =
@@ -193,13 +193,14 @@ class InitialApproachCamera extends CGL.Spatial {
 
   void animate(double timeMs) {
     range = (transform.getTranslation() - ci.tdst).length;
+    double dur = 11000;
+    double dur2 = 16000;
 
-    // hard coded duration
-    if (timeMs >= 20000) {
-      if (lastTime < 20000) {
+    if (timeMs >= dur) {
+      if (lastTime < dur) {
         ci.setSrc(transform);
       }
-      double t = (timeMs - 20000) / (25000.0 - 20000.0);
+      double t = (timeMs - dur) / (dur2 - dur);
       if (t > 1.0) {
         return;
       }
@@ -209,7 +210,7 @@ class InitialApproachCamera extends CGL.Spatial {
       azimuth = Math.pi + timeMs * 0.0001;
       azimuth = azimuth % (2.0 * Math.pi);
       polar = polar.clamp(-Math.pi / 2 + 0.1, Math.pi / 2 - 0.1);
-      double r = radius - timeMs * 0.1;
+      double r = (radius - timeMs * 0.1) * 0.3;
       setPosFromSpherical(r * 2.0, azimuth, polar);
       addPosFromVec(_lookAtPos);
       lookAt(_lookAtPos);
@@ -349,6 +350,13 @@ class Scene {
   Scene.Sky(CGL.ChronosGL cgl, int w, int h) {
     program = CGL.RenderProgram(
       "sky", cgl, SKY.VertexShader, SKY.FragmentShader);
+    mesh = CGL.ShapeQuad(program, 1);
+    mat = CGL.Material('sky');
+  }
+
+  Scene.Sky2(CGL.ChronosGL cgl, int w, int h) {
+    program = CGL.RenderProgram(
+      "sky2", cgl, SKY.VertexShader, SKY.GradientFragmentShader);
     mesh = CGL.ShapeQuad(program, 1);
     mat = CGL.Material('sky');
   }
@@ -639,6 +647,7 @@ class AllScenes {
     insideFractal = Scene.InsideFractal(cgl, w, h);
 
     sky = Scene.Sky(cgl, w, h);
+    sky2 = Scene.Sky2(cgl, w, h);
     portal = Scene.Portal(cgl);
     finale = Scene.Finale(cgl);
 
@@ -667,6 +676,7 @@ class AllScenes {
   Scene portal;
   Scene finale;
   Scene sky;
+  Scene sky2;
 
   // Note: updates tkc as a side-effect
   void PlacePortal(double timeMs, double pos, double radius, TorusKnotCamera tkc) {
@@ -747,6 +757,7 @@ class AllScenes {
       case "wireframe-outside":
         outsideWireframeBuildings.Draw(cgl, perspective);
         outsideStreet.Draw(cgl, perspective);
+        sky.Draw(cgl, perspective);
         portal.Draw(cgl, perspective);
         break;
       case "wireframe-orbit":
@@ -784,20 +795,23 @@ class AllScenes {
       case "sketch-outside":
         outsideSketch.Draw(cgl, perspective);
         outsideStreet.Draw(cgl, perspective);
+        sky.Draw(cgl, perspective);
         portal.Draw(cgl, perspective);
         break;
       case "night-outside":
         outsideNightBuildings.Draw(cgl, perspective);
         outsideStreet.Draw(cgl, perspective);
-        sky.Draw(cgl, perspective);
+        sky2.Draw(cgl, perspective);
         portal.Draw(cgl, perspective);
         break;
       case "night-orbit":
         outsideNightBuildings.Draw(cgl, perspective);
         outsideStreet.Draw(cgl, perspective);
+        sky2.Draw(cgl, perspective);
         break;
       case "finale":
         finale.Draw(cgl, perspective);
+        sky2.Draw(cgl, perspective);
         break;
       default:
         assert(false, "unexepected theme ${name}");
@@ -817,13 +831,13 @@ class ScriptScene {
 double kTimeUnit = 1000;
 
 final List<ScriptScene> gScript = [
-  ScriptScene("night-orbit", 25.0 * kTimeUnit, 0, 0.0),
-  ScriptScene("night-outside", 25.0 * kTimeUnit, 9, kTubeRadius + 50.0),
-  ScriptScene("gol-inside", 20.0 * kTimeUnit, 6, 1.0),
-  ScriptScene("wireframe-outside", 25.0 * kTimeUnit, 3, kTubeRadius + 50.0),
-  ScriptScene("gol2-inside", 20.0 * kTimeUnit, 6, 1.0),
-  ScriptScene("sketch-outside", 25.0 * kTimeUnit, 0, kTubeRadius + 50.0),
-  ScriptScene("finale", 25.0 * kTimeUnit, 0, 0.0),
+  ScriptScene("night-orbit", 16.0 * kTimeUnit, 0, 0.0),
+  ScriptScene("night-outside", 32.0 * kTimeUnit, 9, kTubeRadius + 50.0),
+  ScriptScene("gol-inside", 32.0 * kTimeUnit, 6, 1.0),
+  ScriptScene("wireframe-outside", 32.0 * kTimeUnit, 3, kTubeRadius + 50.0),
+  ScriptScene("gol2-inside", 16.0 * kTimeUnit, 6, 1.0),
+  ScriptScene("sketch-outside", 32.0 * kTimeUnit, 0, kTubeRadius + 50.0),
+  ScriptScene("finale", 16.0 * kTimeUnit, 0, 0.0),
 ];
 
 void main() {
@@ -831,7 +845,7 @@ void main() {
       CGL.StatsFps(HTML.document.getElementById("stats"), "blue", "gray");
   final params = HashParameters();
   LogInfo("Params: ${params}");
-  if (params.containsKey("demo")) {
+  if (!params.containsKey("develop")) {
     print("demo mode");
     for (HTML.Element e in HTML.document.querySelectorAll(".control")) {
       print("disable control: ${e}");
