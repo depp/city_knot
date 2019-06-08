@@ -173,16 +173,18 @@ BuildingColors NightBuildingColors(Math.Random rng) {
 
 typedef BuildingColors ColorFactoryFun(Math.Random rng);
 
-final _FullFeaturedRoof = RoofFeatures();
+final _FullFeaturedRoof = RoofFeatures()
+  ..allowRadioTower = false
+  ..allowGlobeLight = false;
 final _WireframeRoof = RoofFeatures()
+  ..allowRadioTower = false
   ..allowLogo = false
+  ..allowGlobeLight = false
   ..allowLightStrip = false;
 final _OnlyLogoRoof = RoofFeatures()
   ..allowGlobeLight = false
   ..allowLightStrip = false
   ..allowRadioTower = false;
-
-
 
 const int kWallStyleNone = 1;
 const int kWallStyleNight = 2;
@@ -286,7 +288,7 @@ Map<String, Theme> allThemes = {
       kShaderTexturedWithShadow,
       DayBuildingColors,
       _OnlyLogoRoof),
-    kModeSketch: Theme(
+  kModeSketch: Theme(
       kModeSketch,
       RGB.fromGray(0x80),
       RGB.fromGray(0xa0),
@@ -299,5 +301,4 @@ Map<String, Theme> allThemes = {
       kShaderTextured,
       DayBuildingColors,
       _OnlyLogoRoof),
-
 };
