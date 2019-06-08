@@ -520,7 +520,7 @@ void _AddFancyRoof(Shape shape, Math.Random rng, Rect area, double level,
         if (rf.allowLogo &&
             numFeatureLogo == 0 &&
             h == 3.0 &&
-            rng.nextInt(5) >= 2) {
+            rng.nextInt(5) >= 0) {
           int logoIndex = o.logo_index;
           _AddLogoStrip(
               shape, rng, base, level, h, o.logoMat, o.logoOtherMat, logoIndex);
