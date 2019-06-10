@@ -40,6 +40,8 @@ final HTML.AudioElement gSoundtrack =
 
 final HTML.Element gMusic = HTML.document.querySelector('#music');
 
+final HTML.Element gPaused = HTML.document.querySelector('#paused');
+
 const bool FAST_START_NO_BUILDINGS = false;
 
 Map<String, String> HashParameters() {
@@ -348,15 +350,15 @@ class Scene {
   }
 
   Scene.Sky(CGL.ChronosGL cgl, int w, int h) {
-    program = CGL.RenderProgram(
-      "sky", cgl, SKY.VertexShader, SKY.FragmentShader);
+    program =
+        CGL.RenderProgram("sky", cgl, SKY.VertexShader, SKY.FragmentShader);
     mesh = CGL.ShapeQuad(program, 1);
     mat = CGL.Material('sky');
   }
 
   Scene.Sky2(CGL.ChronosGL cgl, int w, int h) {
     program = CGL.RenderProgram(
-      "sky2", cgl, SKY.VertexShader, SKY.GradientFragmentShader);
+        "sky2", cgl, SKY.VertexShader, SKY.GradientFragmentShader);
     mesh = CGL.ShapeQuad(program, 1);
     mat = CGL.Material('sky');
   }
@@ -613,7 +615,8 @@ class AllScenes {
     } else {
       final Floorplan floorplan = Floorplan(kHeight, kWidth, 10, rng);
       final CGL.GeometryBuilder torus = TorusKnot(kHeight, kWidth);
-      final CGL.GeometryBuilder torusLowRez = TorusKnot(kHeight ~/ 8, kWidth ~/ 8);
+      final CGL.GeometryBuilder torusLowRez =
+          TorusKnot(kHeight ~/ 8, kWidth ~/ 8);
       final CGL.GeometryBuilder buildings =
           CITY.MakeSimpleBuildings(floorplan.GetBuildings(), torus, kWidth);
 
@@ -679,7 +682,8 @@ class AllScenes {
   Scene sky2;
 
   // Note: updates tkc as a side-effect
-  void PlacePortal(double timeMs, double speed, double pos, double radius, TorusKnotCamera tkc) {
+  void PlacePortal(double timeMs, double speed, double pos, double radius,
+      TorusKnotCamera tkc) {
     // print("portal ${timeMs}");
     tkc.SetTubeRadius(radius);
     tkc.animate(pos, speed, gCameraRoute.value);
@@ -836,9 +840,9 @@ final List<ScriptScene> gScript = [
   ScriptScene("night-orbit", 16.0 * kTimeUnit, 1.0, 0, 0.0),
   ScriptScene("night-outside", 32.0 * kTimeUnit, 1.0, 9, kTubeRadius + 50.0),
   ScriptScene("gol-inside", 32.0 * kTimeUnit, 1.0, 6, 1.0),
-  ScriptScene("wireframe-outside", 32.0 * kTimeUnit, 1.2, 3, kTubeRadius + 50.0),
-  ScriptScene("gol2-inside", 16.0 * kTimeUnit, 2.0, 6, 1.0),
-  ScriptScene("sketch-outside", 32.0 * kTimeUnit, 1.0, 0, kTubeRadius + 50.0),
+  ScriptScene(
+      "wireframe-outside", 32.0 * kTimeUnit, 1.2, 3, kTubeRadius + 50.0),
+  ScriptScene("gol2-inside", 16.0 * kTimeUnit, 1.5, 6, 1.0), ScriptScene("sketch-outside", 32.0 * kTimeUnit, 1.0, 0, kTubeRadius + 50.0),
   ScriptScene("finale", 16.0 * kTimeUnit, 1.0, 0, 0.0),
 ];
 
@@ -906,6 +910,7 @@ void main() {
       lastTheme = gTheme.value;
     }
 
+    gPaused.style.display = "none";
     double t = timeMs - zeroTimeMs;
     if (gMode.value == "manual-camera") {
       perspective.UpdateCamera(mc);
@@ -913,6 +918,11 @@ void main() {
       mc.animate(elapsed);
       allScenes.RenderScene(gTheme.value, cgl, perspective, t);
     } else if (gMode.value == "demo") {
+      if (gSoundtrack.ended ||
+          gSoundtrack.currentTime == 0.0 ||
+          gSoundtrack.paused) {
+        gPaused.style.display = "block";
+      }
       if (gSoundtrack.ended || gSoundtrack.currentTime == 0.0) {
         print("Music started ${gSoundtrack.ended} ${gSoundtrack.currentTime}");
         gSoundtrack.play();
