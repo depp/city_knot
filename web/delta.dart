@@ -59,6 +59,7 @@ Map<String, String> HashParameters() {
   return out;
 }
 
+
 void buildPlaneVectors(
     final VM.Vector3 planeNormal, VM.Vector3 u, VM.Vector3 v) {
   final double a =
@@ -77,6 +78,7 @@ void buildPlaneVectors(
     ..normalize();
 }
 
+
 VM.Vector3 getRoute(VM.Vector3 v1, VM.Vector3 v2, String route) {
   switch (route) {
     case "0":
@@ -89,6 +91,49 @@ VM.Vector3 getRoute(VM.Vector3 v1, VM.Vector3 v2, String route) {
       return -v2;
     default:
       return v1;
+  }
+}
+
+class TorusKnotHelper {
+  TorusKnotHelper(this._radius, this._p, this._q, this._heightScale);
+
+  final double _radius;
+  final int _p;
+  final int _q;
+  final double _heightScale;
+  final double _TorusEpsilon = 0.01;
+
+  // point in center / on surface
+  final VM.Vector3 point = VM.Vector3.zero();
+
+  // point in center / on surface slightly ahead
+  final VM.Vector3 target = VM.Vector3.zero();
+
+  // tangent (target - point)
+  final VM.Vector3 tangent = VM.Vector3.zero();
+
+  // vector from center to surface
+  final VM.Vector3 offset = VM.Vector3.zero();
+
+  // tangent plane
+  final VM.Vector3 v1 = VM.Vector3.zero();
+  final VM.Vector3 v2 = VM.Vector3.zero();
+
+  void insidePoint(double u, double tubeRadius, double tubeAzimuth) {
+    CGL.TorusKnotGetPos(u, _q, _p, _radius, _heightScale, point);
+    //p1.scale((p1.length + kTubeRadius * 1.1) / p1.length);
+
+    CGL.TorusKnotGetPos(
+        u + _TorusEpsilon, _q, _p, _radius, _heightScale, target);
+    tangent
+      ..setFrom(target)
+      ..sub(point);
+
+    buildPlaneVectors(tangent, v1, v2);
+    offset
+      ..setZero()
+      ..addScaled(v1, tubeRadius * Math.sin(tubeAzimuth))
+      ..addScaled(v2, tubeRadius * Math.cos(tubeAzimuth));
   }
 }
 
@@ -842,7 +887,8 @@ final List<ScriptScene> gScript = [
   ScriptScene("gol-inside", 32.0 * kTimeUnit, 1.0, 6, 1.0),
   ScriptScene(
       "wireframe-outside", 32.0 * kTimeUnit, 1.2, 3, kTubeRadius + 50.0),
-  ScriptScene("gol2-inside", 16.0 * kTimeUnit, 1.5, 6, 1.0), ScriptScene("sketch-outside", 32.0 * kTimeUnit, 1.0, 0, kTubeRadius + 50.0),
+  ScriptScene("gol2-inside", 16.0 * kTimeUnit, 1.5, 6, 1.0),
+  ScriptScene("sketch-outside", 32.0 * kTimeUnit, 1.0, 0, kTubeRadius + 50.0),
   ScriptScene("finale", 16.0 * kTimeUnit, 1.0, 0, 0.0),
 ];
 
@@ -868,6 +914,8 @@ void main() {
   final HTML.CanvasElement canvas =
       HTML.document.querySelector('#webgl-canvas');
   final CGL.ChronosGL cgl = CGL.ChronosGL(canvas)..enable(CGL.GL_CULL_FACE);
+
+  final TorusKnotHelper tkhelper = TorusKnotHelper(kRadius, 2, 3, kHeightScale);
 
   // Cameras
 
