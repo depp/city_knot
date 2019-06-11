@@ -17,6 +17,7 @@ import 'shaders.dart';
 import 'sky.dart' as SKY;
 import 'textures.dart';
 import 'theme.dart' as THEME;
+import 'torus.dart';
 
 final double zNear = 0.1;
 final double zFar = 20000.0;
@@ -57,140 +58,6 @@ Map<String, String> HashParameters() {
     out[tv[0]] = tv[1];
   }
   return out;
-}
-
-
-void buildPlaneVectors(
-    final VM.Vector3 planeNormal, VM.Vector3 u, VM.Vector3 v) {
-  final double a =
-      planeNormal.x * planeNormal.x + planeNormal.y * planeNormal.y;
-  final double k = 1.0 / Math.sqrt(a);
-  u
-    ..x = -planeNormal.y * k
-    ..y = planeNormal.x * k
-    ..z = 0.0
-    ..normalize();
-
-  v
-    ..x = -planeNormal.z * planeNormal.x * k
-    ..y = -planeNormal.y * planeNormal.z * k
-    ..z = a * k
-    ..normalize();
-}
-
-
-VM.Vector3 getRoute(VM.Vector3 v1, VM.Vector3 v2, String route) {
-  switch (route) {
-    case "0":
-      return v1;
-    case "3":
-      return v2;
-    case "6":
-      return -v1;
-    case "9":
-      return -v2;
-    default:
-      return v1;
-  }
-}
-
-class TorusKnotHelper {
-  TorusKnotHelper(this._radius, this._p, this._q, this._heightScale);
-
-  final double _radius;
-  final int _p;
-  final int _q;
-  final double _heightScale;
-  final double _TorusEpsilon = 0.01;
-
-  // point in center / on surface
-  final VM.Vector3 point = VM.Vector3.zero();
-
-  // point in center / on surface slightly ahead
-  final VM.Vector3 target = VM.Vector3.zero();
-
-  // tangent (target - point)
-  final VM.Vector3 tangent = VM.Vector3.zero();
-
-  // vector from center to surface
-  final VM.Vector3 offset = VM.Vector3.zero();
-
-  // tangent plane
-  final VM.Vector3 v1 = VM.Vector3.zero();
-  final VM.Vector3 v2 = VM.Vector3.zero();
-
-  void insidePoint(double u, double tubeRadius, double tubeAzimuth) {
-    CGL.TorusKnotGetPos(u, _q, _p, _radius, _heightScale, point);
-    //p1.scale((p1.length + kTubeRadius * 1.1) / p1.length);
-
-    CGL.TorusKnotGetPos(
-        u + _TorusEpsilon, _q, _p, _radius, _heightScale, target);
-    tangent
-      ..setFrom(target)
-      ..sub(point);
-
-    buildPlaneVectors(tangent, v1, v2);
-    offset
-      ..setZero()
-      ..addScaled(v1, tubeRadius * Math.sin(tubeAzimuth))
-      ..addScaled(v2, tubeRadius * Math.cos(tubeAzimuth));
-  }
-}
-
-// Camera flying through a TorusKnot like through a tunnel
-class TorusKnotCamera extends CGL.Spatial {
-  TorusKnotCamera(
-      {this.radius = kRadius,
-      this.p = 2,
-      this.q = 3,
-      this.heightScale = kHeightScale})
-      : super("camera:torusknot");
-
-  final double radius;
-  double _tubeRadius = 1.0;
-  final int p;
-  final int q;
-  final double heightScale;
-  final double _TorusEpsilon = 0.01;
-
-  // point inside/on torus
-  final VM.Vector3 point = VM.Vector3.zero();
-
-  // point inside/on torus slightly ahead
-  final VM.Vector3 target = VM.Vector3.zero();
-
-  // tangent (target - point)
-  final VM.Vector3 tangent = VM.Vector3.zero();
-
-  // tangent plane
-  final VM.Vector3 v1 = VM.Vector3.zero();
-  final VM.Vector3 v2 = VM.Vector3.zero();
-
-  void animate(double timeMs, double speed, String route) {
-    double u = timeMs * speed / 6000;
-    CGL.TorusKnotGetPos(u, q, p, radius, heightScale, point);
-    //p1.scale((p1.length + kTubeRadius * 1.1) / p1.length);
-
-    CGL.TorusKnotGetPos(u + _TorusEpsilon, q, p, radius, heightScale, target);
-    tangent
-      ..setFrom(target)
-      ..sub(point);
-
-    buildPlaneVectors(tangent, v1, v2);
-    VM.Vector3 offset = getRoute(v1, v2, route);
-    offset.scale(this._tubeRadius);
-
-    //offset.scale(-1.0);
-    point.add(offset);
-    target.add(offset);
-
-    setPosFromVec(point);
-    lookAt(target, offset);
-  }
-
-  void SetTubeRadius(double tr) {
-    this._tubeRadius = tr;
-  }
 }
 
 class CameraInterpolation {
@@ -514,15 +381,25 @@ class SceneSketch extends Scene {
 }
 
 class SceneSketch2 extends Scene {
-  SceneSketch2(CGL.ChronosGL cgl, Math.Random rng, this.w, this.h,
-      Floorplan floorplan, CGL.GeometryBuilder torus, int kWidth) {
+  SceneSketch2(
+      CGL.ChronosGL cgl,
+      Math.Random rng,
+      this.w,
+      this.h,
+      Floorplan floorplan,
+      CGL.GeometryBuilder torus,
+      TorusKnotHelper tkhelper,
+      int kWidth,
+      int kHeight) {
     final Shape shape = CITY.MakeBuildings(
         cgl,
         rng,
         666.0,
         floorplan.GetBuildings(),
         torus,
+        tkhelper,
         kWidth,
+        kHeight,
         ["delta", "alpha"],
         THEME.allThemes[THEME.kModeSketch]);
 
@@ -572,15 +449,32 @@ class SceneSketch2 extends Scene {
 }
 
 class SceneCityNight extends Scene {
-  SceneCityNight(CGL.ChronosGL cgl, Math.Random rng, this.w, this.h,
-      Floorplan floorplan, CGL.GeometryBuilder torus, int kWidth) {
+  SceneCityNight(
+      CGL.ChronosGL cgl,
+      Math.Random rng,
+      this.w,
+      this.h,
+      Floorplan floorplan,
+      CGL.GeometryBuilder torus,
+      TorusKnotHelper tkhelper,
+      int kWidth,
+      int kHeigth) {
     screen = CGL.Framebuffer.Screen(cgl);
 
     program = CGL.RenderProgram(
         "final", cgl, pcTexturedVertexShader, pcTexturedFragmentShader);
 
-    Shape shape = CITY.MakeBuildings(cgl, rng, 666.0, floorplan.GetBuildings(),
-        torus, kWidth, ["delta", "alpha"], THEME.allThemes[THEME.kModeNight]);
+    Shape shape = CITY.MakeBuildings(
+        cgl,
+        rng,
+        666.0,
+        floorplan.GetBuildings(),
+        torus,
+        tkhelper,
+        kWidth,
+        kHeigth,
+        ["delta", "alpha"],
+        THEME.allThemes[THEME.kModeNight]);
     print(">>>>>>> ${shape}");
     for (CGL.Material m in shape.builders.keys) {
       m.SetUniform(CGL.uModelMatrix, VM.Matrix4.identity());
@@ -600,8 +494,16 @@ class SceneCityNight extends Scene {
 }
 
 class SceneCityWireframe extends Scene {
-  SceneCityWireframe(CGL.ChronosGL cgl, Math.Random rng, this.w, this.h,
-      Floorplan floorplan, CGL.GeometryBuilder torus, int kWidth) {
+  SceneCityWireframe(
+      CGL.ChronosGL cgl,
+      Math.Random rng,
+      this.w,
+      this.h,
+      Floorplan floorplan,
+      CGL.GeometryBuilder torus,
+      TorusKnotHelper tkhelper,
+      int kWidth,
+      int kHeight) {
     screen = CGL.Framebuffer.Screen(cgl);
 
     program = CGL.RenderProgram(
@@ -613,7 +515,9 @@ class SceneCityWireframe extends Scene {
         666.0,
         floorplan.GetBuildings(),
         torus,
+        tkhelper,
         kWidth,
+        kHeight,
         ["delta", "alpha"],
         THEME.allThemes[THEME.kModeWireframe]);
     print(">>>>>>> ${shape}");
@@ -658,26 +562,30 @@ class AllScenes {
       outsideNightBuildings = Scene();
       outsideNightBuildings2 = Scene();
     } else {
+      final TorusKnotHelper tkhelper =
+          TorusKnotHelper(kRadius, 2, 3, kHeightScale);
+
       final Floorplan floorplan = Floorplan(kHeight, kWidth, 10, rng);
       final CGL.GeometryBuilder torus = TorusKnot(kHeight, kWidth);
       final CGL.GeometryBuilder torusLowRez =
           TorusKnot(kHeight ~/ 8, kWidth ~/ 8);
-      final CGL.GeometryBuilder buildings =
-          CITY.MakeSimpleBuildings(floorplan.GetBuildings(), torus, kWidth);
+      final CGL.GeometryBuilder buildings = CITY.MakeSimpleBuildings(
+          floorplan.GetBuildings(), torus, tkhelper, kWidth, kHeight);
 
       outsideStreet = Scene.OutsideStreet(cgl, floorplan, torusLowRez);
 
       outsideNightBuildings2 = Scene.OutsideNightBuildings(cgl, buildings);
-      outsideNightBuildings =
-          SceneCityNight(cgl, rng, w, h, floorplan, torus, kWidth);
+      outsideNightBuildings = SceneCityNight(
+          cgl, rng, w, h, floorplan, torus, tkhelper, kWidth, kHeight);
 
       outsideWireframeBuildings2 =
           Scene.OutsideWireframeBuildings(cgl, buildings);
-      outsideWireframeBuildings =
-          SceneCityWireframe(cgl, rng, w, h, floorplan, torus, kWidth);
+      outsideWireframeBuildings = SceneCityWireframe(
+          cgl, rng, w, h, floorplan, torus, tkhelper, kWidth, kHeight);
 
       outsideSketch2 = SceneSketch(cgl, rng, w, h, buildings);
-      outsideSketch = SceneSketch2(cgl, rng, w, h, floorplan, torus, kWidth);
+      outsideSketch = SceneSketch2(
+          cgl, rng, w, h, floorplan, torus, tkhelper, kWidth, kHeight);
     }
     LogInfo("creating buildingcenes done");
 
@@ -915,11 +823,9 @@ void main() {
       HTML.document.querySelector('#webgl-canvas');
   final CGL.ChronosGL cgl = CGL.ChronosGL(canvas)..enable(CGL.GL_CULL_FACE);
 
-  final TorusKnotHelper tkhelper = TorusKnotHelper(kRadius, 2, 3, kHeightScale);
-
   // Cameras
 
-  final TorusKnotCamera tkc = TorusKnotCamera();
+  final TorusKnotCamera tkc = TorusKnotCamera(kRadius, 2, 3, kHeightScale);
   // manual
   final CGL.OrbitCamera mc = CGL.OrbitCamera(kRadius * 1.5, 0.0, 0.0, canvas)
     ..mouseWheelFactor = -0.2;

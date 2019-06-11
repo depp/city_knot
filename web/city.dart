@@ -12,6 +12,7 @@ import 'floorplan.dart' as FLOORPLAN;
 import 'geometry.dart';
 import 'rgb.dart';
 import 'theme.dart' as THEME;
+import 'torus.dart';
 
 CGL.GeometryBuilder _MakeOneBuilding(double dx, double dy, double dz) {
   CGL.GeometryBuilder gb = CGL.CubeGeometry(
@@ -91,7 +92,11 @@ void ExtractTransformsAtTorusSurfaceCity(CGL.GeometryBuilder torus, int kWidth,
 }
 
 CGL.GeometryBuilder MakeSimpleBuildings(
-    List<FLOORPLAN.Building> buildings, CGL.GeometryBuilder torus, int kWidth) {
+    List<FLOORPLAN.Building> buildings,
+    CGL.GeometryBuilder torus,
+    TorusKnotHelper knhelper,
+    int kWidth,
+    int kHeight) {
   print("building stats ${buildings.length}");
 
   CGL.GeometryBuilder out = CGL.GeometryBuilder();
@@ -142,7 +147,7 @@ void _AddOneBuilding(
     RoofOptions roofOpt,
     THEME.RoofFeatures rf,
     FLOORPLAN.Building b) {
-    //print ("building ${b}");
+  //print ("building ${b}");
   switch (b.kind) {
     case FLOORPLAN.kTileBuildingTower:
       var opt = BuildingTowerOptions(rng, params, colors, b.height > 40.0);
@@ -174,7 +179,9 @@ Shape MakeBuildings(
     double seed,
     List<FLOORPLAN.Building> buildings,
     CGL.GeometryBuilder torus,
+      TorusKnotHelper knhelper,
     int kWidth,
+    int kHeight,
     List<String> logos,
     THEME.Theme theme) {
   print("Make building materials");
@@ -214,7 +221,7 @@ Shape MakeBuildings(
 
     Rect oldbase = b.base;
 
-    b.base = Rect(-b.base.w,  -b.base.h , b.base.w * 2.0, b.base.h * 2.0);
+    b.base = Rect(-b.base.w, -b.base.h, b.base.w * 2.0, b.base.h * 2.0);
     _AddOneBuilding(tmp, rng, params, colors, roofOpt, rf, b);
     b.base = oldbase;
 
