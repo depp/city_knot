@@ -341,47 +341,7 @@ class SceneGOL extends Scene {
 }
 
 class SceneSketch extends Scene {
-  SceneSketch(CGL.ChronosGL cgl, Math.Random rng, this.w, this.h,
-      CGL.GeometryBuilder buildings) {
-    fb = CGL.Framebuffer.Default(cgl, w, h);
-
-    final VM.Vector3 dirLight = VM.Vector3(2.0, -1.2, 0.5);
-    CGL.Light light = CGL.DirectionalLight(
-        "dir", dirLight, CGL.ColorWhite, CGL.ColorBlack, 1000.0);
-
-    illumination = CGL.Illumination()..AddLight(light);
-
-    screen = CGL.Framebuffer.Screen(cgl);
-
-    mat = CGL.Material("")
-      ..SetUniform(CGL.uModelMatrix, VM.Matrix4.identity())
-      ..SetUniform(CGL.uShininess, 10.0)
-      ..SetUniform(CGL.uTexture2, fb.colorTexture)
-      ..SetUniform(CGL.uTexture, MakeNoiseTexture(cgl, rng));
-
-    programPrep = CGL.RenderProgram(
-        "sketch-prep", cgl, sketchPrepVertexShader, sketchPrepFragmentShader);
-    program = CGL.RenderProgram(
-        "final", cgl, sketchVertexShader, sketchFragmentShader);
-    mesh = CGL.GeometryBuilderToMeshData("sketch", program, buildings);
-  }
-
-  void Draw(CGL.ChronosGL cgl, CGL.Perspective perspective) {
-    fb.Activate(CGL.GL_CLEAR_ALL, 0, 0, w, h);
-    programPrep.Draw(mesh, [perspective, illumination, mat]);
-    screen.Activate(CGL.GL_CLEAR_ALL, 0, 0, w, h);
-    program.Draw(mesh, [perspective, illumination, mat]);
-  }
-
-  int w, h;
-  CGL.Framebuffer fb;
-  CGL.Illumination illumination;
-  CGL.RenderProgram programPrep;
-  CGL.Framebuffer screen;
-}
-
-class SceneSketch2 extends Scene {
-  SceneSketch2(
+  SceneSketch(
       CGL.ChronosGL cgl,
       Math.Random rng,
       this.w,
@@ -554,38 +514,30 @@ class AllScenes {
       outsideStreet = Scene();
 
       outsideSketch = Scene();
-      outsideSketch2 = Scene();
 
       outsideWireframeBuildings = Scene();
-      outsideWireframeBuildings2 = Scene();
 
       outsideNightBuildings = Scene();
-      outsideNightBuildings2 = Scene();
     } else {
       final TorusKnotHelper tkhelper =
           TorusKnotHelper(kRadius, 2, 3, kHeightScale);
 
       final Floorplan floorplan = Floorplan(kHeight, kWidth, 10, rng);
-      final CGL.GeometryBuilder torus = TorusKnot(kHeight, kWidth);
+      //final CGL.GeometryBuilder torus = TorusKnot(kHeight, kWidth);
       final CGL.GeometryBuilder torusLowRez =
           TorusKnot(kHeight ~/ 8, kWidth ~/ 8);
-      final CGL.GeometryBuilder buildings = CITY.MakeSimpleBuildings(
-          floorplan.GetBuildings(), torus, tkhelper, kWidth, kHeight);
+
 
       outsideStreet = Scene.OutsideStreet(cgl, floorplan, torusLowRez);
 
-      outsideNightBuildings2 = Scene.OutsideNightBuildings(cgl, buildings);
       outsideNightBuildings = SceneCityNight(
-          cgl, rng, w, h, floorplan, torus, tkhelper, kWidth, kHeight);
+          cgl, rng, w, h, floorplan, null, tkhelper, kWidth, kHeight);
 
-      outsideWireframeBuildings2 =
-          Scene.OutsideWireframeBuildings(cgl, buildings);
       outsideWireframeBuildings = SceneCityWireframe(
-          cgl, rng, w, h, floorplan, torus, tkhelper, kWidth, kHeight);
+          cgl, rng, w, h, floorplan, null, tkhelper, kWidth, kHeight);
 
-      outsideSketch2 = SceneSketch(cgl, rng, w, h, buildings);
-      outsideSketch = SceneSketch2(
-          cgl, rng, w, h, floorplan, torus, tkhelper, kWidth, kHeight);
+      outsideSketch = SceneSketch(
+          cgl, rng, w, h, floorplan, null, tkhelper, kWidth, kHeight);
     }
     LogInfo("creating buildingcenes done");
 
@@ -614,13 +566,10 @@ class AllScenes {
   Scene outsideStreet;
 
   Scene outsideWireframeBuildings;
-  Scene outsideWireframeBuildings2;
 
   Scene outsideNightBuildings;
-  Scene outsideNightBuildings2;
 
   Scene outsideSketch;
-  Scene outsideSketch2;
 
   Scene insidePlasma;
   Scene insideWireframe;

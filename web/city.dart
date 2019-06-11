@@ -10,29 +10,11 @@ import 'config.dart';
 import 'facade.dart' as FACADE;
 import 'floorplan.dart' as FLOORPLAN;
 import 'geometry.dart';
+import 'meshes.dart';
 import 'rgb.dart';
 import 'theme.dart' as THEME;
 import 'torus.dart';
 
-CGL.GeometryBuilder _MakeOneBuilding(double dx, double dy, double dz) {
-  CGL.GeometryBuilder gb = CGL.CubeGeometry(
-      x: dx, y: dy, z: dz, uMin: 0.0, uMax: 1.0, vMin: 0.0, vMax: 1.0);
-  gb.EnableAttribute(CGL.aColor);
-  final List<VM.Vector3> colors = [];
-  VM.Vector3 c = VM.Vector3.random();
-  VM.Vector3 black = VM.Vector3.zero();
-  for (int n = 0; n < gb.vertices.length; n++) {
-    if (n ~/ 4 == 1) {
-      colors.add(black);
-    } else {
-      colors.add(c);
-    }
-  }
-
-  gb.AddAttributesVector3(CGL.aColor, colors);
-  gb.GenerateWireframeCenters();
-  return gb;
-}
 
 void ExtractTransformsAtTorusSurface(CGL.GeometryBuilder torus, int kWidth,
     Rect base, double height, VM.Matrix4 mat, VM.Matrix3 matNormal) {
@@ -63,10 +45,25 @@ void ExtractTransformsAtTorusSurface(CGL.GeometryBuilder torus, int kWidth,
   mat.copyRotation(matNormal);
 }
 
-void ExtractTransformsAtTorusSurfaceCity(CGL.GeometryBuilder torus, int kWidth,
-    Rect base, double height, VM.Matrix4 mat, VM.Matrix3 matNormal) {
+void ExtractTransformsAtTorusSurfaceCity(
+    CGL.GeometryBuilder torus,
+    TorusKnotHelper tkhelper,
+    int kWidth,
+    int kHeight,
+    Rect base,
+    double height,
+    VM.Matrix4 mat,
+    VM.Matrix3 matNormal) {
   VM.Vector3 GetVertex(int x, int y) {
-    return torus.vertices[x + y * (kWidth + 1)];
+    //assert(y < kHeight);
+    //assert(x < kWidth);
+    tkhelper.surfacePoint(
+        y / kHeight * 2.0 * Math.pi, kTubeRadius, x / kWidth * 2.0 * Math.pi);
+    //var a2 = torus.vertices[x + y * (kWidth + 1)];
+    //var a1 = tkhelper.point;
+    //print("$x $kWidth  $y $kHeight    $a1  va $a2");
+
+    return tkhelper.point.clone();
   }
 
   final int y = base.x.floor();
@@ -91,35 +88,6 @@ void ExtractTransformsAtTorusSurfaceCity(CGL.GeometryBuilder torus, int kWidth,
   mat.copyRotation(matNormal);
 }
 
-CGL.GeometryBuilder MakeSimpleBuildings(
-    List<FLOORPLAN.Building> buildings,
-    CGL.GeometryBuilder torus,
-    TorusKnotHelper knhelper,
-    int kWidth,
-    int kHeight) {
-  print("building stats ${buildings.length}");
-
-  CGL.GeometryBuilder out = CGL.GeometryBuilder();
-  out.EnableAttribute(CGL.aColor);
-  out.EnableAttribute(CGL.aNormal);
-  out.EnableAttribute(CGL.aTexUV);
-  out.EnableAttribute(CGL.aCenter);
-
-  VM.Matrix4 mat = VM.Matrix4.zero();
-  VM.Matrix3 matNormal = VM.Matrix3.zero();
-
-  for (FLOORPLAN.Building b in buildings) {
-    final int h = b.base.w.floor();
-    final int w = b.base.h.floor();
-    final CGL.GeometryBuilder gb = _MakeOneBuilding(h + 0.0, w + 0.0, b.height);
-
-    ExtractTransformsAtTorusSurface(
-        torus, kWidth, b.base, b.height, mat, matNormal);
-    out.MergeAndTakeOwnership(gb, mat, matNormal);
-  }
-  print("final building gb ${out}");
-  return out;
-}
 
 List<CGL.Material> MakeWallMaterials(
     CGL.ChronosGL cgl, Math.Random rng, double seed, int style) {
@@ -179,7 +147,7 @@ Shape MakeBuildings(
     double seed,
     List<FLOORPLAN.Building> buildings,
     CGL.GeometryBuilder torus,
-      TorusKnotHelper knhelper,
+    TorusKnotHelper tkhelper,
     int kWidth,
     int kHeight,
     List<String> logos,
@@ -217,7 +185,7 @@ Shape MakeBuildings(
     final THEME.RoofFeatures rf = theme.roofFeatures;
 
     ExtractTransformsAtTorusSurfaceCity(
-        torus, kWidth, b.base, b.height, mat, matNormal);
+        torus, tkhelper, kWidth, kHeight, b.base, b.height, mat, matNormal);
 
     Rect oldbase = b.base;
 
