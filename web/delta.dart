@@ -642,7 +642,7 @@ class AllScenes {
     tkc.animate(pos, speed, gCameraRoute.value);
     VM.Matrix4 mat = VM.Matrix4.identity()
       ..rotateZ(timeMs / 500.0)
-      ..setTranslation(tkc.point);
+      ..setTranslation(tkc.getPoint());
     portal.mat.ForceUniform(CGL.uModelMatrix, mat);
   }
 
@@ -844,7 +844,7 @@ void main() {
   tkc.SetTubeRadius(kTubeRadius + 50.0);
   tkc.animate(0, 1.0, "9");
   iac.ci.setDst(tkc.transform);
-  iac.cameraFinalPos.setFrom(tkc.point);
+  iac.cameraFinalPos.setFrom(tkc.getPoint());
 
   AllScenes allScenes =
       AllScenes(cgl, rng, canvas.clientWidth, canvas.clientHeight);
