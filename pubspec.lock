@@ -133,7 +133,7 @@ packages:
       name: chronosgl
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "3.9.2"
+    version: "3.9.3"
   code_builder:
     dependency: transitive
     description:
