@@ -42,6 +42,8 @@ final HTML.Element gMusic = HTML.document.querySelector('#music');
 
 final HTML.Element gPaused = HTML.document.querySelector('#paused');
 
+final HTML.Element gInitializing = HTML.document.querySelector('#initializing');
+
 Map<String, String> HashParameters() {
   final Map<String, String> out = {};
 
@@ -702,12 +704,13 @@ void main() {
       CGL.StatsFps(HTML.document.getElementById("stats"), "blue", "gray");
   final params = HashParameters();
   LogInfo("Params: ${params}");
-  if (!params.containsKey("develop")) {
-    print("demo mode");
+  if (params.containsKey("develop")) {
+    print("development mode");
     for (HTML.Element e in HTML.document.querySelectorAll(".control")) {
       print("disable control: ${e}");
-      e.style.display = "none";
+      e.style.display = "block";
     }
+  } else {
     gMode.value = "demo";
   }
 
@@ -832,5 +835,13 @@ void main() {
     return false;
   });
 
+  gPaused.onClick.listen((HTML.Event ev) {
+    ev.preventDefault();
+    ev.stopPropagation();
+    gSoundtrack.play();
+    return false;
+  });
+
+  gInitializing.style.display = "none";
   animate(0.0);
 }
