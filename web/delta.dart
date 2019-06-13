@@ -6,7 +6,6 @@ import 'package:vector_math/vector_math.dart' as VM;
 
 import 'city.dart' as CITY;
 import 'floorplan.dart';
-import 'fractal.dart' as FRACTAL;
 import 'geometry.dart';
 import 'gol.dart' as GOL;
 import 'logging.dart';
@@ -42,8 +41,6 @@ final HTML.AudioElement gSoundtrack =
 final HTML.Element gMusic = HTML.document.querySelector('#music');
 
 final HTML.Element gPaused = HTML.document.querySelector('#paused');
-
-const bool FAST_START_NO_BUILDINGS = false;
 
 Map<String, String> HashParameters() {
   final Map<String, String> out = {};
@@ -226,39 +223,6 @@ class Scene {
     program = CGL.RenderProgram("finale", cgl, CGL.perlinNoiseVertexShader,
         CGL.makePerlinNoiseColorFragmentShader(false));
     mesh = CGL.ShapeTorusKnot(program);
-  }
-
-  Scene.InsideFractal(CGL.ChronosGL cgl, int w, int h) {
-    program = CGL.RenderProgram(
-        "fractal", cgl, FRACTAL.VertexShader, FRACTAL.FragmentShader);
-    mesh = CGL.ShapeQuad(program, 1);
-    if (1 == 1) {
-      mat = CGL.Material("fractal");
-      return;
-    }
-
-    int tw = 4 * 1024;
-    int th = 4 * 1024;
-    CGL.Framebuffer fb = CGL.Framebuffer.Default(cgl, tw, th);
-    fb.Activate(CGL.GL_CLEAR_ALL, 0, 0, tw, th);
-
-    mat = CGL.Material("fractal")
-      ..SetUniform(CGL.uModelMatrix, VM.Matrix4.identity());
-
-    program.Draw(mesh, [mat]);
-    mat
-      ..SetUniform(CGL.uTexture, fb.colorTexture)
-      ..SetUniform(CGL.uColor, VM.Vector3(0.1, 0.0, 0.0));
-
-    program = CGL.RenderProgram(
-        "fractal", cgl, texturedVertexShader, texturedFragmentShader);
-
-    CGL.GeometryBuilder torus = InsideTorusKTexture(kHeight ~/ 8, kWidth ~/ 8);
-
-    mesh = CGL.GeometryBuilderToMeshData("fractal", program, torus);
-
-    // switch back to default screen
-    CGL.Framebuffer.Screen(cgl).Activate(CGL.GL_CLEAR_ALL, 0, 0, w, h);
   }
 
   Scene.Sky(CGL.ChronosGL cgl, int w, int h) {
@@ -509,36 +473,26 @@ class AllScenes {
     // Building Scenes
 
     LogInfo("creating building scenes");
-    if (FAST_START_NO_BUILDINGS) {
-      LogInfo("NO BUINDINGS");
-      outsideStreet = Scene();
 
-      outsideSketch = Scene();
+    final TorusKnotHelper tkhelper =
+        TorusKnotHelper(kRadius, 2, 3, kHeightScale);
 
-      outsideWireframeBuildings = Scene();
+    final Floorplan floorplan = Floorplan(kHeight, kWidth, 10, rng);
+    //final CGL.GeometryBuilder torus = TorusKnot(kHeight, kWidth);
+    final CGL.GeometryBuilder torusLowRez =
+        TorusKnot(kHeight ~/ 8, kWidth ~/ 8);
 
-      outsideNightBuildings = Scene();
-    } else {
-      final TorusKnotHelper tkhelper =
-          TorusKnotHelper(kRadius, 2, 3, kHeightScale);
+    outsideStreet = Scene.OutsideStreet(cgl, floorplan, torusLowRez);
 
-      final Floorplan floorplan = Floorplan(kHeight, kWidth, 10, rng);
-      //final CGL.GeometryBuilder torus = TorusKnot(kHeight, kWidth);
-      final CGL.GeometryBuilder torusLowRez =
-          TorusKnot(kHeight ~/ 8, kWidth ~/ 8);
+    outsideNightBuildings = SceneCityNight(
+        cgl, rng, w, h, floorplan, null, tkhelper, kWidth, kHeight);
 
+    outsideWireframeBuildings = SceneCityWireframe(
+        cgl, rng, w, h, floorplan, null, tkhelper, kWidth, kHeight);
 
-      outsideStreet = Scene.OutsideStreet(cgl, floorplan, torusLowRez);
+    outsideSketch =
+        SceneSketch(cgl, rng, w, h, floorplan, null, tkhelper, kWidth, kHeight);
 
-      outsideNightBuildings = SceneCityNight(
-          cgl, rng, w, h, floorplan, null, tkhelper, kWidth, kHeight);
-
-      outsideWireframeBuildings = SceneCityWireframe(
-          cgl, rng, w, h, floorplan, null, tkhelper, kWidth, kHeight);
-
-      outsideSketch = SceneSketch(
-          cgl, rng, w, h, floorplan, null, tkhelper, kWidth, kHeight);
-    }
     LogInfo("creating buildingcenes done");
 
     // Other Scenes
@@ -552,7 +506,6 @@ class AllScenes {
     insideWireframeHex = Scene.InsideWireframe(cgl, torusWFeHex);
     insideGOL1 = SceneGOL.Variant1(cgl, w, h, rng);
     insideGOL2 = SceneGOL.Variant2(cgl, w, h, rng);
-    insideFractal = Scene.InsideFractal(cgl, w, h);
 
     sky = Scene.Sky(cgl, w, h);
     sky2 = Scene.Sky2(cgl, w, h);
@@ -576,7 +529,6 @@ class AllScenes {
   Scene insideWireframeHex;
   Scene insideGOL1;
   Scene insideGOL2;
-  Scene insideFractal;
 
   Scene portal;
   Scene finale;
@@ -695,10 +647,6 @@ class AllScenes {
         insideGOL2.Draw(cgl, perspective);
         portal.Draw(cgl, perspective);
         break;
-      case "fractal-inside":
-        insideFractal.Draw(cgl, perspective);
-        portal.Draw(cgl, perspective);
-        break;
       case "sketch-outside":
         outsideSketch.Draw(cgl, perspective);
         outsideStreet.Draw(cgl, perspective);
@@ -765,7 +713,6 @@ void main() {
 
   IntroduceShaderVars();
   GOL.RegisterShaderVars();
-  FRACTAL.RegisterShaderVars();
   SKY.RegisterShaderVars();
 
   final HTML.CanvasElement canvas =
