@@ -779,7 +779,7 @@ void main() {
   final Math.Random rng = Math.Random(0);
 
   tkc.SetTubeRadius(TORUS.kTubeRadius + 50.0);
-  tkc.animate(0, 1.0, "9");
+  tkc.animate(0, 1.0, "${gScript[1].route}");
   iac.ci.setDst(tkc.transform);
   iac.cameraFinalPos.setFrom(tkc.getPoint());
 
