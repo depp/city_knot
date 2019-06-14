@@ -88,7 +88,7 @@ class CameraInterpolation {
 }
 
 class InitialApproachCamera extends CGL.Spatial {
-  InitialApproachCamera() : super("camera:orbit");
+  InitialApproachCamera() : super("initial");
 
   CameraInterpolation ci = CameraInterpolation();
 
@@ -127,6 +127,33 @@ class InitialApproachCamera extends CGL.Spatial {
       lookAt(_lookAtPos);
     }
     lastTime = timeMs;
+  }
+}
+
+class FinaleCamera extends CGL.Spatial {
+  FinaleCamera() : super("finale");
+
+  double radius = 10.0;
+  double azimuth = 0.0;
+  double polar = 0.0;
+  double lastTime = 0.0;
+  final VM.Vector3 _lookAtPos = VM.Vector3.zero();
+
+  void animate(double timeMs) {
+    double dur = 17000;
+
+    if (timeMs >= dur) {
+      timeMs = dur;
+    }
+
+    // azimuth += 0.03;
+    azimuth = Math.pi + timeMs * 0.001;
+    azimuth = azimuth % (2.0 * Math.pi);
+    polar = polar.clamp(-Math.pi / 2 + 0.1, Math.pi / 2 - 0.1);
+    double r = radius + timeMs * Math.log(timeMs) * 0.014;
+    setPosFromSpherical(r * 2.0, azimuth, polar);
+    addPosFromVec(_lookAtPos);
+    lookAt(_lookAtPos);
   }
 }
 
@@ -493,8 +520,8 @@ class AllScenes {
     outsideWireframeBuildings = SceneCityWireframe(
         cgl, rng, w, h, floorplan, null, tkhelper, TORUS.kWidth, TORUS.kHeight);
 
-    outsideSketch =
-        SceneSketch(cgl, rng, w, h, floorplan, null, tkhelper, TORUS.kWidth, TORUS.kHeight);
+    outsideSketch = SceneSketch(
+        cgl, rng, w, h, floorplan, null, tkhelper, TORUS.kWidth, TORUS.kHeight);
 
     LogInfo("creating buildingcenes done");
 
@@ -547,6 +574,7 @@ class AllScenes {
       double radius,
       TORUS.TorusKnotCamera tkc,
       InitialApproachCamera iac,
+      FinaleCamera fc,
       CGL.OrbitCamera oc) {
     switch (name) {
       case "wireframe-orbit":
@@ -578,9 +606,8 @@ class AllScenes {
         tkc.animate(timeMs, speed, gCameraRoute.value);
         break;
       case "finale":
-        oc.azimuth = timeMs / 1000.0;
-        oc.animate(timeMs);
-        perspective.UpdateCamera(oc);
+        fc.animate(timeMs);
+        perspective.UpdateCamera(fc);
         break;
       default:
         assert(false, "unexepected theme ${name}");
@@ -591,7 +618,6 @@ class AllScenes {
       double timeMs) {
     portal.mat.ForceUniform(CGL.uTime, timeMs);
     finale.mat.ForceUniform(CGL.uTime, timeMs / 1000.0);
-
 
     switch (name) {
       case "wireframe-outside":
@@ -653,12 +679,14 @@ double kTimeUnit = 1000;
 
 final List<ScriptScene> gScript = [
   ScriptScene("night-orbit", 16.0 * kTimeUnit, 1.0, 0, 0.0),
-  ScriptScene("night-outside", 32.0 * kTimeUnit, 1.0, 9, TORUS.kTubeRadius + 50.0),
+  ScriptScene(
+      "night-outside", 32.0 * kTimeUnit, 1.0, 9, TORUS.kTubeRadius + 50.0),
   ScriptScene("gol-inside", 32.0 * kTimeUnit, 1.0, 6, 1.0),
   ScriptScene(
       "wireframe-outside", 32.0 * kTimeUnit, 1.2, 3, TORUS.kTubeRadius + 50.0),
   ScriptScene("gol2-inside", 16.0 * kTimeUnit, 1.5, 6, 1.0),
-  ScriptScene("sketch-outside", 32.0 * kTimeUnit, 1.0, 0, TORUS.kTubeRadius + 50.0),
+  ScriptScene(
+      "sketch-outside", 32.0 * kTimeUnit, 1.0, 0, TORUS.kTubeRadius + 50.0),
   ScriptScene("finale", 16.0 * kTimeUnit, 1.0, 0, 0.0),
 ];
 
@@ -687,12 +715,15 @@ void main() {
 
   // Cameras
 
-  final TORUS.TorusKnotCamera tkc = TORUS.TorusKnotCamera(TORUS.kRadius, 2, 3, TORUS.kHeightScale);
+  final TORUS.TorusKnotCamera tkc =
+      TORUS.TorusKnotCamera(TORUS.kRadius, 2, 3, TORUS.kHeightScale);
   // manual
-  final CGL.OrbitCamera mc = CGL.OrbitCamera(TORUS.kRadius * 1.5, 0.0, 0.0, canvas)
-    ..mouseWheelFactor = -0.2;
+  final CGL.OrbitCamera mc =
+      CGL.OrbitCamera(TORUS.kRadius * 1.5, 0.0, 0.0, canvas)
+        ..mouseWheelFactor = -0.2;
 
   final CGL.OrbitCamera oc = CGL.OrbitCamera(100, 0.0, 0.0, canvas);
+  final FinaleCamera fc = FinaleCamera();
 
   final InitialApproachCamera iac = InitialApproachCamera();
 
@@ -750,7 +781,7 @@ void main() {
             gCameraRoute.selectedIndex = s.route ~/ 3;
             allScenes.PlacePortal(t, s.durationMs, s.speed, s.radius, tkc);
             allScenes.UpdateCameras(
-                s.name, perspective, t, s.speed, s.radius, tkc, iac, oc);
+                s.name, perspective, t, s.speed, s.radius, tkc, iac, fc, oc);
             allScenes.RenderScene(s.name, cgl, perspective, t);
             gTheme.value = s.name;
             break;
@@ -766,7 +797,7 @@ void main() {
       // place portal early so we can see it right aways
       allScenes.PlacePortal(t, 10000, 1.0, radius, tkc);
       allScenes.UpdateCameras(
-          gTheme.value, perspective, t, 1.0, radius, tkc, iac, oc);
+          gTheme.value, perspective, t, 1.0, radius, tkc, iac, fc, oc);
       allScenes.RenderScene(gTheme.value, cgl, perspective, t);
     }
 
