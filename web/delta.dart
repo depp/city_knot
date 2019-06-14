@@ -14,7 +14,6 @@ import 'mondrianjs.dart';
 import 'portal.dart' as PORTAL;
 import 'shaders.dart';
 import 'sky.dart' as SKY;
-import 'textures.dart';
 import 'theme.dart' as THEME;
 import 'torus.dart';
 
@@ -344,13 +343,12 @@ class SceneSketch extends Scene {
     program = CGL.RenderProgram(
         "final", cgl, sketchVertexShader, sketchFragmentShader);
     print(">>>>>>> ${shape}");
-    CGL.Texture noise = MakeNoiseTexture(cgl, rng);
+
     for (CGL.Material m in shape.builders.keys) {
       m
         ..SetUniform(CGL.uModelMatrix, VM.Matrix4.identity())
         ..SetUniform(CGL.uShininess, 10.0)
-        ..SetUniform(CGL.uTexture2, fb.colorTexture)
-        ..ForceUniform(CGL.uTexture, noise);
+        ..SetUniform(CGL.uTexture2, fb.colorTexture);
       meshes[m] = CGL.GeometryBuilderToMeshData("", program, shape.builders[m]);
     }
   }
@@ -458,8 +456,8 @@ class SceneCityWireframe extends Scene {
         ..SetUniform(CGL.uColorAlpha, VM.Vector4(1.0, 0.0, 0.0, 1.0))
         ..SetUniform(CGL.uColorAlpha2, VM.Vector4(0.1, 0.0, 0.0, 1.0));
       if (m.name == "logos") {
-        meshes[m] =
-            CGL.GeometryBuilderToMeshData(m.name, programLogo, shape.builders[m]);
+        meshes[m] = CGL.GeometryBuilderToMeshData(
+            m.name, programLogo, shape.builders[m]);
       } else {
         meshes[m] =
             CGL.GeometryBuilderToMeshData(m.name, program, shape.builders[m]);
@@ -472,7 +470,6 @@ class SceneCityWireframe extends Scene {
     for (CGL.Material m in meshes.keys)
       if (m.name == "logos") {
         programLogo.Draw(meshes[m], [perspective, m]);
-        print("do logos");
       } else {
         program.Draw(meshes[m], [perspective, m]);
       }

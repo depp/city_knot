@@ -218,18 +218,41 @@ void _FillCanvas(HTML.CanvasElement canvas, RGB color) {
     ..fillRect(0, 0, canvas.width, canvas.height);
 }
 
+HTML.CanvasElement NoiseCanvas(Math.Random rand, int w, int h) {
+  final HTML.CanvasElement canvas = new HTML.CanvasElement();
+  canvas.width = w;
+  canvas.height = h;
+  var context = canvas.context2D;
+  var image = context.getImageData(0, 0, canvas.width, canvas.height);
+
+  for (int i = 0; i < image.data.length; i += 4) {
+    int v = 30 + rand.nextInt(225);
+    image.data[i + 0] = v;
+    image.data[i + 1] = v;
+    image.data[i + 2] = v;
+    image.data[i + 3] = 255;
+  }
+  context.putImageData(image, 0, 0);
+  return canvas;
+}
+
+HTML.CanvasElement FilledCanvas(RGB color, int w, int h) {
+  final HTML.CanvasElement canvas = HTML.CanvasElement();
+  canvas
+    ..width = w
+    ..height = h;
+  _FillCanvas(canvas, color);
+  return canvas;
+}
+
 HTML.CanvasElement MakeCanvasText(int w, int h, String fontProps,
     String fontName, List<String> lines, RGB colorText, RGB colorBG) {
   int lineH = h ~/ lines.length;
   int fontSize = (lineH * 0.85).floor();
-  HTML.CanvasElement canvas = HTML.CanvasElement();
-  canvas
-    ..width = w
-    ..height = h;
-  HTML.CanvasRenderingContext2D c = canvas.context2D;
-  c
-    ..fillStyle = colorBG.ToString()
-    ..fillRect(0, 0, w, h)
+  final HTML.CanvasElement canvas = colorBG == null ?
+       NoiseCanvas(Math.Random(), w, h) :
+      FilledCanvas(colorBG, w, h);
+  HTML.CanvasRenderingContext2D c = canvas.context2D
     ..strokeStyle = colorText.ToString()
     ..fillStyle = colorText.ToString()
     ..textBaseline = "middle"
@@ -346,22 +369,8 @@ HTML.CanvasElement MakeOrientationTestPattern() {
       lines, kRGBwhite, kRGBblack);
 }
 
-CGL.Texture MakeNoiseTesture(CGL.ChronosGL cgl, Math.Random rand) {
-  HTML.CanvasElement canvas = new HTML.CanvasElement();
-  canvas.width = 512 * 2;
-  canvas.height = 512 * 2;
-  var context = canvas.context2D;
-  var image = context.getImageData(0, 0, canvas.width, canvas.height);
-
-  for (int i = 0; i < image.data.length; i += 4) {
-    int v = 30 + rand.nextInt(225);
-    image.data[i + 0] = v;
-    image.data[i + 1] = v;
-    image.data[i + 2] = v;
-    image.data[i + 3] = 255;
-  }
-  context.putImageData(image, 0, 0);
-
+CGL.Texture MakeNoiseTexture(CGL.ChronosGL cgl, Math.Random rand) {
+  final HTML.CanvasElement canvas = NoiseCanvas(rand, 512 * 2, 512 * 2);
   return CGL.ImageTexture(cgl, "noise", canvas, CGL.TexturePropertiesMipmap);
 }
 
@@ -597,7 +606,7 @@ CGL.Material MakeSolid(CGL.ChronosGL cgl) {
 
 CGL.Material MakeLogo(
     CGL.ChronosGL cgl, List<String> logo, RGB textColor, RGB wallColor) {
-   final List<String> logos = GetBuildingLogos(Math.Random());
+  final List<String> logos = GetBuildingLogos(Math.Random());
   return MakeStandardTextureMaterial(
       "logos", cgl, MakeCanvasBuildingLogos(logos, textColor, wallColor));
 }

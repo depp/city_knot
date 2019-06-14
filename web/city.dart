@@ -97,7 +97,7 @@ List<CGL.Material> MakeWallMaterials(
     case THEME.kWallStyleNight:
       return FACADE.MakeWindowWalls(cgl, seed, kRGBblack, true);
     case THEME.kWallStyleSketch:
-      CGL.Texture noise = FACADE.MakeNoiseTesture(cgl, Math.Random());
+      CGL.Texture noise = FACADE.MakeNoiseTexture(cgl, Math.Random());
       return [CGL.Material("sketch")..SetUniform(CGL.uTexture, noise)];
     default:
       assert(false, "unknown mode ${style}");
