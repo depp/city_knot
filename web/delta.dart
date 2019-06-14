@@ -269,9 +269,7 @@ class Scene {
 }
 
 class SceneGOL extends Scene {
-  SceneGOL(CGL.ChronosGL cgl, this.w, this.h) {
-    CGL.GeometryBuilder torus =
-        TORUS.InsideTorusKTexture(TORUS.GOLHeight ~/ 16, TORUS.GOLWidth ~/ 16);
+  SceneGOL(CGL.ChronosGL cgl, this.w, this.h, CGL.GeometryBuilder torus) {
     program = CGL.RenderProgram(
         "gol", cgl, texturedVertexShader, texturedFragmentShader);
     mesh = CGL.GeometryBuilderToMeshData("gol", program, torus);
@@ -287,8 +285,9 @@ class SceneGOL extends Scene {
       ..SetUniform(CGL.uColor, VM.Vector3(0.1, 0.0, 0.0));
   }
 
-  factory SceneGOL.Variant1(CGL.ChronosGL cgl, int w, int h, Math.Random rng) {
-    var res = SceneGOL(cgl, w, h);
+  factory SceneGOL.Variant1(CGL.ChronosGL cgl, int w, int h,
+      CGL.GeometryBuilder torus, Math.Random rng) {
+    var res = SceneGOL(cgl, w, h, torus);
     res.gol
       ..SetRandom(rng, 10)
       ..SetRules(rng, "23/3")
@@ -296,8 +295,9 @@ class SceneGOL extends Scene {
     return res;
   }
 
-  factory SceneGOL.Variant2(CGL.ChronosGL cgl, int w, int h, Math.Random rng) {
-    var res = SceneGOL(cgl, w, h);
+  factory SceneGOL.Variant2(CGL.ChronosGL cgl, int w, int h,
+      CGL.GeometryBuilder torus, Math.Random rng) {
+    var res = SceneGOL(cgl, w, h, torus);
     res.gol
       ..SetRandom(rng, 35)
       ..SetRules(rng, "45678/3")
@@ -551,7 +551,10 @@ class AllScenes {
     final Floorplan floorplan = Floorplan(TORUS.kHeight, TORUS.kWidth, 10, rng);
     //final CGL.GeometryBuilder torus = TorusKnot(kHeight, kWidth);
     final CGL.GeometryBuilder torusLowRez =
-        TORUS.TorusKnot(TORUS.kHeight ~/ 8, TORUS.kWidth ~/ 8);
+        TORUS.TorusKnot(TORUS.kHeight ~/ 4, TORUS.kWidth ~/ 4);
+
+    final CGL.GeometryBuilder torusLowRezInside =
+        TORUS.InsideTorusKTexture(TORUS.kHeight ~/ 4, TORUS.kWidth ~/ 4);
 
     outsideStreet = Scene.OutsideStreet(cgl, floorplan, torusLowRez);
 
@@ -567,8 +570,8 @@ class AllScenes {
     LogInfo("creating buildingcenes done");
 
     // Other Scenes
-    insideGOL1 = SceneGOL.Variant1(cgl, w, h, rng);
-    insideGOL2 = SceneGOL.Variant2(cgl, w, h, rng);
+    insideGOL1 = SceneGOL.Variant1(cgl, w, h, torusLowRezInside, rng);
+    insideGOL2 = SceneGOL.Variant2(cgl, w, h, torusLowRezInside, rng);
 
     sky = Scene.Sky(cgl, w, h);
     sky2 = Scene.Sky2(cgl, w, h);
