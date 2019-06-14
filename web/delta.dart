@@ -15,6 +15,8 @@ import 'shaders.dart';
 import 'sky.dart' as SKY;
 import 'theme.dart' as THEME;
 import 'torus.dart' as TORUS;
+import 'facade.dart' as FACADE;
+import 'config.dart' as CONFIG;
 
 final double zNear = 0.1;
 final double zFar = 20000.0;
@@ -333,6 +335,7 @@ class SceneSketch extends Scene {
       TORUS.TorusKnotHelper tkhelper,
       int kWidth,
       int kHeight) {
+    final THEME.Theme theme = THEME.allThemes[THEME.kModeSketch];
     final Shape shape = CITY.MakeBuildings(
         cgl,
         rng,
@@ -343,7 +346,7 @@ class SceneSketch extends Scene {
         kWidth,
         kHeight,
         ["delta", "alpha"],
-        THEME.allThemes[THEME.kModeSketch]);
+        theme);
 
     fb = CGL.Framebuffer.Default(cgl, w, h);
 
@@ -361,12 +364,30 @@ class SceneSketch extends Scene {
         "final", cgl, sketchVertexShader, sketchFragmentShader);
     print(">>>>>>> ${shape}");
 
-    for (CGL.Material m in shape.builders.keys) {
-      m
+    Map<String, CGL.Material> materials =
+        FACADE.MakeMaterialsForTheme(cgl, theme, [], rng, 0.0);
+
+    Map<CGL.Material, CGL.GeometryBuilder> consolidator = {};
+
+    final VM.Matrix4 id4 = VM.Matrix4.identity();
+    final VM.Matrix3 id3 = VM.Matrix3.identity();
+
+    for (String m in shape.builders.keys) {
+      final CGL.Material mat = materials[m];
+      final CGL.GeometryBuilder gb = shape.builders[m];
+      if (consolidator.containsKey(mat)) {
+        consolidator[mat].MergeAndTakeOwnership(gb, id4, id3);
+      } else {
+        consolidator[mat] = gb;
+      }
+    }
+    for (CGL.Material mat in consolidator.keys) {
+      mat
         ..SetUniform(CGL.uModelMatrix, VM.Matrix4.identity())
         ..SetUniform(CGL.uShininess, 10.0)
         ..SetUniform(CGL.uTexture2, fb.colorTexture);
-      meshes[m] = CGL.GeometryBuilderToMeshData("", program, shape.builders[m]);
+      meshes[mat] =
+          CGL.GeometryBuilderToMeshData("", program, consolidator[mat]);
     }
   }
 
@@ -404,22 +425,33 @@ class SceneCityNight extends Scene {
 
     program = CGL.RenderProgram(
         "final", cgl, pcTexturedVertexShader, pcTexturedFragmentShader);
+    final THEME.Theme theme = THEME.allThemes[THEME.kModeNight];
 
-    Shape shape = CITY.MakeBuildings(
-        cgl,
-        rng,
-        666.0,
-        floorplan.GetBuildings(),
-        torus,
-        tkhelper,
-        kWidth,
-        kHeigth,
-        ["delta", "alpha"],
-        THEME.allThemes[THEME.kModeNight]);
+    Shape shape = CITY.MakeBuildings(cgl, rng, 666.0, floorplan.GetBuildings(),
+        torus, tkhelper, kWidth, kHeigth, ["delta", "alpha"], theme);
     print(">>>>>>> ${shape}");
-    for (CGL.Material m in shape.builders.keys) {
-      m.SetUniform(CGL.uModelMatrix, VM.Matrix4.identity());
-      meshes[m] = CGL.GeometryBuilderToMeshData("", program, shape.builders[m]);
+
+    Map<String, CGL.Material> materials =
+        FACADE.MakeMaterialsForTheme(cgl, theme, [], rng, 0.0);
+
+    Map<CGL.Material, CGL.GeometryBuilder> consolidator = {};
+
+    final VM.Matrix4 id4 = VM.Matrix4.identity();
+    final VM.Matrix3 id3 = VM.Matrix3.identity();
+
+    for (String m in shape.builders.keys) {
+      final CGL.Material mat = materials[m];
+      final CGL.GeometryBuilder gb = shape.builders[m];
+      if (consolidator.containsKey(mat)) {
+        consolidator[mat].MergeAndTakeOwnership(gb, id4, id3);
+      } else {
+        consolidator[mat] = gb;
+      }
+    }
+    for (CGL.Material mat in consolidator.keys) {
+      mat..SetUniform(CGL.uModelMatrix, VM.Matrix4.identity());
+      meshes[mat] =
+          CGL.GeometryBuilderToMeshData("", program, consolidator[mat]);
     }
   }
 
@@ -452,32 +484,42 @@ class SceneCityWireframe extends Scene {
 
     programLogo = CGL.RenderProgram(
         "final", cgl, pcTexturedVertexShader, pcTexturedFragmentShader);
+    final THEME.Theme theme = THEME.allThemes[THEME.kModeWireframe];
 
-    Shape shape = CITY.MakeBuildings(
-        cgl,
-        rng,
-        666.0,
-        floorplan.GetBuildings(),
-        torus,
-        tkhelper,
-        kWidth,
-        kHeight,
-        ["delta", "alpha"],
-        THEME.allThemes[THEME.kModeWireframe]);
+    Shape shape = CITY.MakeBuildings(cgl, rng, 666.0, floorplan.GetBuildings(),
+        torus, tkhelper, kWidth, kHeight, ["delta", "alpha"], theme);
     print(">>>>>>> ${shape}");
-    for (CGL.Material m in shape.builders.keys) {
-      m
+
+    Map<String, CGL.Material> materials =
+        FACADE.MakeMaterialsForTheme(cgl, theme, [], rng, 0.0);
+
+    Map<CGL.Material, CGL.GeometryBuilder> consolidator = {};
+
+    final VM.Matrix4 id4 = VM.Matrix4.identity();
+    final VM.Matrix3 id3 = VM.Matrix3.identity();
+
+    for (String m in shape.builders.keys) {
+      final CGL.Material mat = materials[m];
+      final CGL.GeometryBuilder gb = shape.builders[m];
+      if (consolidator.containsKey(mat)) {
+        consolidator[mat].MergeAndTakeOwnership(gb, id4, id3);
+      } else {
+        consolidator[mat] = gb;
+      }
+    }
+    for (CGL.Material mat in consolidator.keys) {
+      mat
         ..SetUniform(CGL.uModelMatrix, VM.Matrix4.identity())
         ..SetUniform(uWidth, 1.5)
         ..SetUniform(CGL.uColor, VM.Vector3(1.0, 1.0, 0.0))
         ..SetUniform(CGL.uColorAlpha, VM.Vector4(1.0, 0.0, 0.0, 1.0))
         ..SetUniform(CGL.uColorAlpha2, VM.Vector4(0.1, 0.0, 0.0, 1.0));
-      if (m.name == "logos") {
-        meshes[m] = CGL.GeometryBuilderToMeshData(
-            m.name, programLogo, shape.builders[m]);
+      if (mat.name == CONFIG.kLogoMat) {
+        meshes[mat] =
+            CGL.GeometryBuilderToMeshData("", programLogo, consolidator[mat]);
       } else {
-        meshes[m] =
-            CGL.GeometryBuilderToMeshData(m.name, program, shape.builders[m]);
+        meshes[mat] =
+            CGL.GeometryBuilderToMeshData("", program, consolidator[mat]);
       }
     }
   }

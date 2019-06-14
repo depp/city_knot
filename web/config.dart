@@ -66,6 +66,24 @@ const int _kColsFacade = kWindowsHorizontal;
 
 const int kNumBuildingLogos = 32;
 
+int GetRandomLogo(Math.Random rng) {
+  return rng.nextInt(32);
+}
+
+
+const int kMaxWindowTextures = 8;
+
+String GetRandomWindowMaterial(Math.Random rng) {
+  return "window-${rng.nextInt(kMaxWindowTextures)}";
+}
+
+const String kSolidMat = "solid";
+const String kLogoMat = "logo";
+const String kLightTrimMat = "light_trim";
+const String kRadioTowerMat = "radio-tower";
+const String kPointLightMat = "point-lights";
+const kFlashingLightMat = "flashing-lights";
+
 Rect GetWindowUVContinous(double offset, double w, double h) {
   return Rect(offset / _kColsFacade, 0.0, w / _kColsFacade, h / _kRowsFacade);
 }

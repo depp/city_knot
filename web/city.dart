@@ -6,11 +6,8 @@ import 'package:chronosgl/chronosgl.dart' as CGL;
 import 'package:vector_math/vector_math.dart' as VM;
 
 import 'building.dart';
-import 'config.dart';
-import 'facade.dart' as FACADE;
 import 'floorplan.dart' as FLOORPLAN;
 import 'geometry.dart';
-import 'rgb.dart';
 import 'theme.dart' as THEME;
 import 'torus.dart' as TORUS;
 
@@ -55,8 +52,8 @@ void ExtractTransformsAtTorusSurfaceCity(
   VM.Vector3 GetVertex(int x, int y) {
     //assert(y < kHeight);
     //assert(x < kWidth);
-    tkhelper.surfacePoint(
-        y / kHeight * 2.0 * Math.pi, TORUS.kTubeRadius, x / kWidth * 2.0 * Math.pi);
+    tkhelper.surfacePoint(y / kHeight * 2.0 * Math.pi, TORUS.kTubeRadius,
+        x / kWidth * 2.0 * Math.pi);
     //var a2 = torus.vertices[x + y * (kWidth + 1)];
     //var a1 = tkhelper.point;
     //print("$x $kWidth  $y $kHeight    $a1  va $a2");
@@ -86,49 +83,27 @@ void ExtractTransformsAtTorusSurfaceCity(
   mat.copyRotation(matNormal);
 }
 
-List<CGL.Material> MakeWallMaterials(
-    CGL.ChronosGL cgl, Math.Random rng, double seed, int style) {
-  switch (style) {
-    case THEME.kWallStyleNone:
-      return [CGL.Material("no-wall")];
-    case THEME.kWallStyleDay:
-      return FACADE.MakeWindowWalls(cgl, seed, kRGBwhite, false);
-    case THEME.kWallStyleNight:
-      return FACADE.MakeWindowWalls(cgl, seed, kRGBblack, true);
-    case THEME.kWallStyleSketch:
-      CGL.Texture noise = FACADE.MakeNoiseTexture(cgl, Math.Random());
-      return [CGL.Material("sketch")..SetUniform(CGL.uTexture, noise)];
-    default:
-      assert(false, "unknown mode ${style}");
-      return [];
-  }
-}
 
-void _AddOneBuilding(
-    Shape shape,
-    Math.Random rng,
-    BuildingParameters params,
-    THEME.BuildingColors colors,
-    RoofOptions roofOpt,
-    THEME.RoofFeatures rf,
-    FLOORPLAN.Building b) {
+
+void _AddOneBuilding(Shape shape, Math.Random rng, THEME.BuildingColors colors,
+    RoofOptions roofOpt, THEME.RoofFeatures rf, FLOORPLAN.Building b) {
   //print ("building ${b}");
   switch (b.kind) {
     case FLOORPLAN.kTileBuildingTower:
-      var opt = BuildingTowerOptions(rng, params, colors, b.height > 40.0);
+      var opt = BuildingTowerOptions(rng, colors, b.height > 40.0);
       AddBuildingTower(shape, rng, b.base, b.height, opt, roofOpt, rf);
       break;
     case FLOORPLAN.kTileBuildingBlocky:
-      var opt = BuildingBlockyOptions(rng, params, colors);
+      var opt = BuildingBlockyOptions(rng, colors);
 
       AddBuildingBlocky(shape, rng, b.base, b.height, opt, roofOpt, rf);
       break;
     case FLOORPLAN.kTileBuildingModern:
-      var opt = BuildingModernOptions(rng, params, colors, rf, b.height > 48.0);
+      var opt = BuildingModernOptions(rng, colors, rf, b.height > 48.0);
       AddBuildingModern(shape, rng, b.base, b.height, opt);
       break;
     case FLOORPLAN.kTileBuildingSimple:
-      var opt = BuildingSimpleOptions(rng, params, colors);
+      var opt = BuildingSimpleOptions(rng, colors);
       AddBuildingSimple(shape, rng, b.base, b.height, opt);
       break;
     default:
@@ -148,33 +123,6 @@ Shape MakeBuildings(
     int kHeight,
     List<String> logos,
     THEME.Theme theme) {
-  print("Make building materials");
-
-  CGL.Material logo;
-  switch (theme.name) {
-    case THEME.kModeNight:
-      logo = FACADE.MakeLogo(cgl, logos, kRGBwhite, kRGBblack);
-      break;
-    case THEME.kModeWireframe:
-      logo = FACADE.MakeLogo(cgl, logos, kRGBred, kRGBblack);
-      break;
-    case THEME.kModeSketch:
-      logo = FACADE.MakeLogo(cgl, logos, kRGBblack, kRGBwhite);
-      break;
-    default:
-      assert(false, "bad theme ${theme.name}");
-  }
-
-  final BuildingParameters params = BuildingParameters()
-    ..wallMats = MakeWallMaterials(cgl, rng, seed, theme.wallStyle)
-    ..logoMat = logo
-    ..lightTrimMat = FACADE.MakeLightTrims(cgl)
-    ..pointLightMat = FACADE.MakePointLight(cgl)
-    ..flashingLightMat = FACADE.MakeFlashingLight(cgl)
-    ..radioTowerMat = FACADE.MakeRadioTower(cgl)
-    ..num_logos = kNumBuildingLogos
-    ..solidMat = FACADE.MakeSolid(cgl);
-
   print("Errecting building");
   Shape out = Shape([CGL.aNormal, CGL.aColor, CGL.aCenter, CGL.aTexUV], []);
   int count = 0;
@@ -188,7 +136,7 @@ Shape MakeBuildings(
     count++;
     Shape tmp = Shape([CGL.aNormal, CGL.aColor, CGL.aCenter, CGL.aTexUV], []);
     final THEME.BuildingColors colors = theme.colorFun(rng);
-    final RoofOptions roofOpt = RoofOptions(rng, params, colors);
+    final RoofOptions roofOpt = RoofOptions(rng, colors);
     final THEME.RoofFeatures rf = theme.roofFeatures;
 
     ExtractTransformsAtTorusSurfaceCity(
@@ -197,10 +145,10 @@ Shape MakeBuildings(
     Rect oldbase = b.base;
 
     b.base = Rect(-b.base.w, -b.base.h, b.base.w * 2.0, b.base.h * 2.0);
-    _AddOneBuilding(tmp, rng, params, colors, roofOpt, rf, b);
+    _AddOneBuilding(tmp, rng, colors, roofOpt, rf, b);
     b.base = oldbase;
 
-    for (CGL.Material cm in tmp.builders.keys) {
+    for (String cm in tmp.builders.keys) {
       out.Get(cm).MergeAndTakeOwnership(tmp.builders[cm], mat, matNormal);
     }
   }

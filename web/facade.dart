@@ -33,6 +33,7 @@ import 'package:vector_math/vector_math.dart' as VM;
 import 'config.dart';
 import 'logging.dart' as log;
 import 'rgb.dart';
+import 'theme.dart' as THEME;
 
 int defaultAnisoLevel = 1;
 
@@ -249,9 +250,9 @@ HTML.CanvasElement MakeCanvasText(int w, int h, String fontProps,
     String fontName, List<String> lines, RGB colorText, RGB colorBG) {
   int lineH = h ~/ lines.length;
   int fontSize = (lineH * 0.85).floor();
-  final HTML.CanvasElement canvas = colorBG == null ?
-       NoiseCanvas(Math.Random(), w, h) :
-      FilledCanvas(colorBG, w, h);
+  final HTML.CanvasElement canvas = colorBG == null
+      ? NoiseCanvas(Math.Random(), w, h)
+      : FilledCanvas(colorBG, w, h);
   HTML.CanvasRenderingContext2D c = canvas.context2D
     ..strokeStyle = colorText.ToString()
     ..fillStyle = colorText.ToString()
@@ -601,25 +602,25 @@ List<CGL.Material> MakeWindowWalls(
 
 CGL.Material MakeSolid(CGL.ChronosGL cgl) {
   return MakeStandardTextureMaterial(
-      "solid", cgl, CGL.MakeSolidColorCanvas("white"));
+      kSolidMat, cgl, CGL.MakeSolidColorCanvas("white"));
 }
 
 CGL.Material MakeLogo(
     CGL.ChronosGL cgl, List<String> logo, RGB textColor, RGB wallColor) {
   final List<String> logos = GetBuildingLogos(Math.Random());
   return MakeStandardTextureMaterial(
-      "logos", cgl, MakeCanvasBuildingLogos(logos, textColor, wallColor));
+      kLogoMat, cgl, MakeCanvasBuildingLogos(logos, textColor, wallColor));
 }
 
 CGL.Material MakeLightTrims(CGL.ChronosGL cgl) {
   return MakeStandardTextureMaterial(
-      "trimlight", cgl, MakeCanvasLightTrimTexture());
+      kLightTrimMat, cgl, MakeCanvasLightTrimTexture());
 }
 
 CGL.Material MakePointLight(CGL.ChronosGL cgl) {
   RGB white = RGB.fromGray(255)..a = 0.99;
   return MakeStandardTextureMaterial(
-      "pointlight", cgl, MakeCanvasPointLight(64, white, kRGBtransparent))
+      kPointLightMat, cgl, MakeCanvasPointLight(64, white, kRGBtransparent))
     ..ForceUniform(CGL.cBlendEquation, CGL.BlendEquationStandard)
     ..ForceUniform(CGL.cDepthWrite, false);
 }
@@ -642,4 +643,56 @@ CGL.Material MakeHeadLights(CGL.ChronosGL cgl) {
       clamp: true)
     ..ForceUniform(CGL.cBlendEquation, CGL.BlendEquationStandard)
     ..ForceUniform(CGL.cDepthWrite, false);
+}
+
+CGL.Material MakeLogoMaterial(
+    CGL.ChronosGL cgl, String theme, List<String> logos) {
+  switch (theme) {
+    case THEME.kModeNight:
+      return MakeLogo(cgl, logos, kRGBwhite, kRGBblack);
+    case THEME.kModeWireframe:
+      return MakeLogo(cgl, logos, kRGBred, kRGBblack);
+    case THEME.kModeSketch:
+      return MakeLogo(cgl, logos, kRGBblack, kRGBwhite);
+    default:
+      assert(false, "bad theme ${theme}");
+      return null;
+  }
+}
+
+List<CGL.Material> MakeWallMaterials(
+    CGL.ChronosGL cgl, Math.Random rng, double seed, int style) {
+  switch (style) {
+    case THEME.kWallStyleNone:
+      return [CGL.Material("no-wall")];
+    case THEME.kWallStyleDay:
+      return MakeWindowWalls(cgl, seed, kRGBwhite, false);
+    case THEME.kWallStyleNight:
+      return MakeWindowWalls(cgl, seed, kRGBblack, true);
+    case THEME.kWallStyleSketch:
+      CGL.Texture noise = MakeNoiseTexture(cgl, Math.Random());
+      return [CGL.Material("sketch")..SetUniform(CGL.uTexture, noise)];
+    default:
+      assert(false, "unknown mode ${style}");
+      return null;
+  }
+}
+
+Map<String, CGL.Material> MakeMaterialsForTheme(CGL.ChronosGL cgl,
+    THEME.Theme theme, List<String> logos, Math.Random rng, double seed) {
+  Map<String, CGL.Material> out = {
+    kLightTrimMat: MakeLightTrims(cgl),
+    kPointLightMat: MakePointLight(cgl),
+    kFlashingLightMat: MakeFlashingLight(cgl),
+    kRadioTowerMat: MakeRadioTower(cgl),
+    kSolidMat: MakeSolid(cgl),
+    kLogoMat: MakeLogoMaterial(cgl, theme.name, GetBuildingLogos(rng))
+  };
+
+  List<CGL.Material> walls = MakeWallMaterials(cgl, rng, seed, theme.wallStyle);
+  assert(walls.length <= kMaxWindowTextures);
+  for (int i = 0; i < kMaxWindowTextures; ++i) {
+    out["window-$i"] = walls[i % walls.length];
+  }
+  return out;
 }

@@ -216,14 +216,14 @@ final Rect kAlmostFullUV =
 class ColorMat {
   ColorMat(this.mat, this.color);
 
-  CGL.Material mat;
+  String mat;
   VM.Vector3 color;
 }
 
 class Shape {
   Shape(this._attributes, this._pointAttributes);
 
-  Map<CGL.Material, CGL.GeometryBuilder> builders = {};
+  Map<String, CGL.GeometryBuilder> builders = {};
   List<String> _attributes;
   List<String> _pointAttributes;
 
@@ -243,7 +243,7 @@ class Shape {
   VM.Vector3 temp = VM.Vector3.zero();
   VM.Vector3 norm = VM.Vector3.zero();
 
-  CGL.GeometryBuilder Get(CGL.Material m) {
+  CGL.GeometryBuilder Get(String m) {
     return builders.putIfAbsent(m, initialBuilder);
   }
 

@@ -30,8 +30,6 @@ library building;
 
 import 'dart:math' as Math;
 
-import 'package:chronosgl/chronosgl.dart'
-    if (dart.library.io) "fake_chronos.dart" as CGL;
 import 'package:vector_math/vector_math.dart' as VM;
 
 import 'config.dart';
@@ -128,39 +126,22 @@ void _AddFan(Shape g, double cx, double cy, double height,
   }
 }
 
-class BuildingParameters {
-  List<CGL.Material> wallMats;
-  CGL.Material solidMat;
-  CGL.Material logoMat;
-  CGL.Material lightTrimMat;
-  CGL.Material pointLightMat;
-  CGL.Material flashingLightMat;
-  CGL.Material radioTowerMat;
-
-  int num_logos;
-
-  int RandomLogo(Math.Random rng) {
-    return rng.nextInt(num_logos);
-  }
-}
-
 // A roundish building
 class BuildingModernOptions {
-  BuildingModernOptions(Math.Random rng, BuildingParameters params,
-      THEME.BuildingColors colors, THEME.RoofFeatures rf, bool tall) {
+  BuildingModernOptions(Math.Random rng, THEME.BuildingColors colors,
+      THEME.RoofFeatures rf, bool tall) {
     capHeight = 1.0 + rng.nextInt(tall ? 5 : 1);
-    CGL.Material texture = params.wallMats[rng.nextInt(params.wallMats.length)];
-    windowMat = ColorMat(texture, colors.wall);
-    offsetMat = ColorMat(params.solidMat, colors.offset);
+    windowMat = ColorMat(GetRandomWindowMaterial(rng), colors.wall);
+    offsetMat = ColorMat(kSolidMat, colors.offset);
 
-    logoMat = ColorMat(params.logoMat, RGB.kRGBwhite.GlColor());
-    trimLightMat = ColorMat(params.lightTrimMat, RGB.kRGBwhite.GlColor());
+    logoMat = ColorMat(kLogoMat, RGB.kRGBwhite.GlColor());
+    trimLightMat = ColorMat(kLightTrimMat, RGB.kRGBwhite.GlColor());
     if (!tall) return;
 
     if (capHeight > 2.0 && rng.nextBool()) {
       maxLogos = capHeight > 1.0 ? 2 : 0;
 
-      logoIndex = params.RandomLogo(rng);
+      logoIndex = GetRandomLogo(rng);
     }
 
     if (rf.allowLightStrip && capHeight > 1.0 && rng.nextInt(4) == 0) {
@@ -379,12 +360,10 @@ void _AddFlatRoof(
 
 // A tall box with several sections/bands
 class BuildingSimpleOptions {
-  BuildingSimpleOptions(
-      Math.Random rng, BuildingParameters params, THEME.BuildingColors colors) {
-    CGL.Material texture = params.wallMats[rng.nextInt(params.wallMats.length)];
-    windowMat = ColorMat(texture, colors.wall);
-    ledgeMat = ColorMat(params.solidMat, colors.ledge);
-    offsetMat = ColorMat(params.solidMat, colors.offset);
+  BuildingSimpleOptions(Math.Random rng, THEME.BuildingColors colors) {
+    windowMat = ColorMat(GetRandomWindowMaterial(rng), colors.wall);
+    ledgeMat = ColorMat(kSolidMat, colors.ledge);
+    offsetMat = ColorMat(kSolidMat, colors.offset);
   }
 
   ColorMat windowMat;
@@ -446,19 +425,18 @@ void _AddLogoStrip(Shape g, Math.Random rng, Rect base, double level, double h,
 class RoofOptions {
   RoofOptions(
     Math.Random rng,
-    BuildingParameters params,
     THEME.BuildingColors colors,
   ) {
-    ledgeMat = ColorMat(params.solidMat, colors.ledge);
-    trimLightMat = ColorMat(params.lightTrimMat, RGB.kRGBwhite.GlColor());
-    trimOtherMat = ColorMat(params.solidMat, RGB.RGB(8, 8, 8).GlColor());
-    largeLightMat = ColorMat(params.pointLightMat, RGB.kRGBwhite.GlColor());
-    logoMat = ColorMat(params.logoMat, colors.logo);
-    logoOtherMat = ColorMat(params.solidMat, colors.logoOther);
-    radioTowerMat = ColorMat(params.radioTowerMat, RGB.kRGBwhite.GlColor());
-    pulseLightMat = ColorMat(params.flashingLightMat, RGB.kRGBwhite.GlColor());
-    logo_index = params.RandomLogo(rng);
-    acMat = ColorMat(params.solidMat, colors.ac);
+    ledgeMat = ColorMat(kSolidMat, colors.ledge);
+    trimLightMat = ColorMat(kLightTrimMat, RGB.kRGBwhite.GlColor());
+    trimOtherMat = ColorMat(kSolidMat, RGB.RGB(8, 8, 8).GlColor());
+    largeLightMat = ColorMat(kPointLightMat, RGB.kRGBwhite.GlColor());
+    logoMat = ColorMat(kLogoMat, colors.logo);
+    logoOtherMat = ColorMat(kSolidMat, colors.logoOther);
+    radioTowerMat = ColorMat(kRadioTowerMat, RGB.kRGBwhite.GlColor());
+    pulseLightMat = ColorMat(kFlashingLightMat, RGB.kRGBwhite.GlColor());
+    logo_index = GetRandomLogo(rng);
+    acMat = ColorMat(kSolidMat, colors.ac);
   }
 
   ColorMat ledgeMat;
@@ -551,13 +529,12 @@ void _AddFancyRoof(Shape shape, Math.Random rng, Rect area, double level,
 // A tall box with several sections/bands
 class BuildingTowerOptions {
   // very_tall = height > 20.0;
-  BuildingTowerOptions(Math.Random rng, BuildingParameters params,
+  BuildingTowerOptions(Math.Random rng, 
       THEME.BuildingColors colors, bool veryTall) {
-    CGL.Material texture = params.wallMats[rng.nextInt(params.wallMats.length)];
-    windowMat = ColorMat(texture, colors.wall);
-    ledgeMat = ColorMat(params.solidMat, colors.ledge);
-    offsetMat = ColorMat(params.solidMat, colors.offset);
-    baseMat = ColorMat(params.solidMat, colors.base);
+    windowMat = ColorMat(GetRandomWindowMaterial(rng), colors.wall);
+    ledgeMat = ColorMat(kSolidMat, colors.ledge);
+    offsetMat = ColorMat(kSolidMat, colors.offset);
+    baseMat = ColorMat(kSolidMat, colors.base);
 
     //
     ledgeHeight = 1.0 + (veryTall ? rng.nextInt(3) : rng.nextInt(2));
@@ -631,11 +608,10 @@ void AddBuildingTower(Shape g, Math.Random rng, Rect base, double height,
 class BuildingBlockyOptions {
   // very_tall = height > 20.0;
   BuildingBlockyOptions(
-      Math.Random rng, BuildingParameters params, THEME.BuildingColors colors) {
-    CGL.Material texture = params.wallMats[rng.nextInt(params.wallMats.length)];
-    windowMat = ColorMat(texture, colors.wall);
-    offsetMat = ColorMat(params.solidMat, colors.offset);
-    baseMat = ColorMat(params.solidMat, colors.base);
+      Math.Random rng, THEME.BuildingColors colors) {
+    windowMat = ColorMat(GetRandomWindowMaterial(rng), colors.wall);
+    offsetMat = ColorMat(kSolidMat, colors.offset);
+    baseMat = ColorMat(kSolidMat, colors.base);
     baseHeight = kBaseHeight * 1.0;
   }
 
