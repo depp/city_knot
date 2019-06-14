@@ -597,7 +597,7 @@ class Floorplan {
         }
         */
         if (rng.nextInt(4) == 1) {
-          altitude = 45.0 + rng.nextInt(10);
+          altitude = 25.0 + rng.nextInt(10) + rng.nextInt(10);
           switch (rng.nextInt(3)) {
             case 0:
               kind = kTileBuildingTower;
