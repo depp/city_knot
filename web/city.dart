@@ -10,10 +10,9 @@ import 'config.dart';
 import 'facade.dart' as FACADE;
 import 'floorplan.dart' as FLOORPLAN;
 import 'geometry.dart';
-import 'meshes.dart';
 import 'rgb.dart';
 import 'theme.dart' as THEME;
-import 'torus.dart';
+import 'torus.dart' as TORUS;
 
 void ExtractTransformsAtTorusSurface(CGL.GeometryBuilder torus, int kWidth,
     Rect base, double height, VM.Matrix4 mat, VM.Matrix3 matNormal) {
@@ -46,7 +45,7 @@ void ExtractTransformsAtTorusSurface(CGL.GeometryBuilder torus, int kWidth,
 
 void ExtractTransformsAtTorusSurfaceCity(
     CGL.GeometryBuilder torus,
-    TorusKnotHelper tkhelper,
+    TORUS.TorusKnotHelper tkhelper,
     int kWidth,
     int kHeight,
     Rect base,
@@ -57,7 +56,7 @@ void ExtractTransformsAtTorusSurfaceCity(
     //assert(y < kHeight);
     //assert(x < kWidth);
     tkhelper.surfacePoint(
-        y / kHeight * 2.0 * Math.pi, kTubeRadius, x / kWidth * 2.0 * Math.pi);
+        y / kHeight * 2.0 * Math.pi, TORUS.kTubeRadius, x / kWidth * 2.0 * Math.pi);
     //var a2 = torus.vertices[x + y * (kWidth + 1)];
     //var a1 = tkhelper.point;
     //print("$x $kWidth  $y $kHeight    $a1  va $a2");
@@ -144,7 +143,7 @@ Shape MakeBuildings(
     double seed,
     List<FLOORPLAN.Building> buildings,
     CGL.GeometryBuilder torus,
-    TorusKnotHelper tkhelper,
+    TORUS.TorusKnotHelper tkhelper,
     int kWidth,
     int kHeight,
     List<String> logos,

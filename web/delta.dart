@@ -9,13 +9,12 @@ import 'floorplan.dart';
 import 'geometry.dart';
 import 'gol.dart' as GOL;
 import 'logging.dart';
-import 'meshes.dart';
 import 'mondrianjs.dart';
 import 'portal.dart' as PORTAL;
 import 'shaders.dart';
 import 'sky.dart' as SKY;
 import 'theme.dart' as THEME;
-import 'torus.dart';
+import 'torus.dart' as TORUS;
 
 final double zNear = 0.1;
 final double zFar = 20000.0;
@@ -243,13 +242,13 @@ class Scene {
 class SceneGOL extends Scene {
   SceneGOL(CGL.ChronosGL cgl, this.w, this.h) {
     CGL.GeometryBuilder torus =
-        InsideTorusKTexture(GOLHeight ~/ 16, GOLWidth ~/ 16);
+        TORUS.InsideTorusKTexture(TORUS.GOLHeight ~/ 16, TORUS.GOLWidth ~/ 16);
     program = CGL.RenderProgram(
         "gol", cgl, texturedVertexShader, texturedFragmentShader);
     mesh = CGL.GeometryBuilderToMeshData("gol", program, torus);
 
-    fb = CGL.Framebuffer.Default(cgl, GOLHeight * 4, GOLWidth * 4);
-    gol = GOL.Life(cgl, GOLHeight, GOLWidth, 4, true);
+    fb = CGL.Framebuffer.Default(cgl, TORUS.GOLHeight * 4, TORUS.GOLWidth * 4);
+    gol = GOL.Life(cgl, TORUS.GOLHeight, TORUS.GOLWidth, 4, true);
 
     screen = CGL.Framebuffer.Screen(cgl);
 
@@ -283,7 +282,7 @@ class SceneGOL extends Scene {
       gol.Step(false, null);
     }
     ++count;
-    fb.Activate(CGL.GL_CLEAR_ALL, 0, 0, kHeight * 4, kWidth * 4);
+    fb.Activate(CGL.GL_CLEAR_ALL, 0, 0, TORUS.kHeight * 4, TORUS.kWidth * 4);
     gol.DrawToScreen();
     screen.Activate(CGL.GL_CLEAR_ALL, 0, 0, w, h);
     program.Draw(mesh, [perspective, mat]);
@@ -304,7 +303,7 @@ class SceneSketch extends Scene {
       this.h,
       Floorplan floorplan,
       CGL.GeometryBuilder torus,
-      TorusKnotHelper tkhelper,
+      TORUS.TorusKnotHelper tkhelper,
       int kWidth,
       int kHeight) {
     final Shape shape = CITY.MakeBuildings(
@@ -371,7 +370,7 @@ class SceneCityNight extends Scene {
       this.h,
       Floorplan floorplan,
       CGL.GeometryBuilder torus,
-      TorusKnotHelper tkhelper,
+      TORUS.TorusKnotHelper tkhelper,
       int kWidth,
       int kHeigth) {
     screen = CGL.Framebuffer.Screen(cgl);
@@ -416,7 +415,7 @@ class SceneCityWireframe extends Scene {
       this.h,
       Floorplan floorplan,
       CGL.GeometryBuilder torus,
-      TorusKnotHelper tkhelper,
+      TORUS.TorusKnotHelper tkhelper,
       int kWidth,
       int kHeight) {
     screen = CGL.Framebuffer.Screen(cgl);
@@ -478,24 +477,24 @@ class AllScenes {
 
     LogInfo("creating building scenes");
 
-    final TorusKnotHelper tkhelper =
-        TorusKnotHelper(kRadius, 2, 3, kHeightScale);
+    final TORUS.TorusKnotHelper tkhelper =
+        TORUS.TorusKnotHelper(TORUS.kRadius, 2, 3, TORUS.kHeightScale);
 
-    final Floorplan floorplan = Floorplan(kHeight, kWidth, 10, rng);
+    final Floorplan floorplan = Floorplan(TORUS.kHeight, TORUS.kWidth, 10, rng);
     //final CGL.GeometryBuilder torus = TorusKnot(kHeight, kWidth);
     final CGL.GeometryBuilder torusLowRez =
-        TorusKnot(kHeight ~/ 8, kWidth ~/ 8);
+        TORUS.TorusKnot(TORUS.kHeight ~/ 8, TORUS.kWidth ~/ 8);
 
     outsideStreet = Scene.OutsideStreet(cgl, floorplan, torusLowRez);
 
     outsideNightBuildings = SceneCityNight(
-        cgl, rng, w, h, floorplan, null, tkhelper, kWidth, kHeight);
+        cgl, rng, w, h, floorplan, null, tkhelper, TORUS.kWidth, TORUS.kHeight);
 
     outsideWireframeBuildings = SceneCityWireframe(
-        cgl, rng, w, h, floorplan, null, tkhelper, kWidth, kHeight);
+        cgl, rng, w, h, floorplan, null, tkhelper, TORUS.kWidth, TORUS.kHeight);
 
     outsideSketch =
-        SceneSketch(cgl, rng, w, h, floorplan, null, tkhelper, kWidth, kHeight);
+        SceneSketch(cgl, rng, w, h, floorplan, null, tkhelper, TORUS.kWidth, TORUS.kHeight);
 
     LogInfo("creating buildingcenes done");
 
@@ -530,7 +529,7 @@ class AllScenes {
 
   // Note: updates tkc as a side-effect
   void PlacePortal(double timeMs, double speed, double pos, double radius,
-      TorusKnotCamera tkc) {
+      TORUS.TorusKnotCamera tkc) {
     // print("portal ${timeMs}");
     tkc.SetTubeRadius(radius);
     tkc.animate(pos, speed, gCameraRoute.value);
@@ -546,24 +545,24 @@ class AllScenes {
       double timeMs,
       double speed,
       double radius,
-      TorusKnotCamera tkc,
+      TORUS.TorusKnotCamera tkc,
       InitialApproachCamera iac,
       CGL.OrbitCamera oc) {
     switch (name) {
       case "wireframe-orbit":
         perspective.UpdateCamera(iac);
-        iac.radius = kRadius * 6.0;
+        iac.radius = TORUS.kRadius * 6.0;
         iac.animate(timeMs);
         break;
       case "night-orbit":
         perspective.UpdateCamera(iac);
-        iac.radius = kRadius * 6.0;
+        iac.radius = TORUS.kRadius * 6.0;
         iac.animate(timeMs);
         break;
       case "wireframe-outside":
       case "night-outside":
       case "sketch-outside":
-        tkc.SetTubeRadius(kTubeRadius + 50.0);
+        tkc.SetTubeRadius(TORUS.kTubeRadius + 50.0);
         perspective.UpdateCamera(tkc);
         tkc.animate(timeMs, speed, gCameraRoute.value);
         break;
@@ -654,12 +653,12 @@ double kTimeUnit = 1000;
 
 final List<ScriptScene> gScript = [
   ScriptScene("night-orbit", 16.0 * kTimeUnit, 1.0, 0, 0.0),
-  ScriptScene("night-outside", 32.0 * kTimeUnit, 1.0, 9, kTubeRadius + 50.0),
+  ScriptScene("night-outside", 32.0 * kTimeUnit, 1.0, 9, TORUS.kTubeRadius + 50.0),
   ScriptScene("gol-inside", 32.0 * kTimeUnit, 1.0, 6, 1.0),
   ScriptScene(
-      "wireframe-outside", 32.0 * kTimeUnit, 1.2, 3, kTubeRadius + 50.0),
+      "wireframe-outside", 32.0 * kTimeUnit, 1.2, 3, TORUS.kTubeRadius + 50.0),
   ScriptScene("gol2-inside", 16.0 * kTimeUnit, 1.5, 6, 1.0),
-  ScriptScene("sketch-outside", 32.0 * kTimeUnit, 1.0, 0, kTubeRadius + 50.0),
+  ScriptScene("sketch-outside", 32.0 * kTimeUnit, 1.0, 0, TORUS.kTubeRadius + 50.0),
   ScriptScene("finale", 16.0 * kTimeUnit, 1.0, 0, 0.0),
 ];
 
@@ -688,9 +687,9 @@ void main() {
 
   // Cameras
 
-  final TorusKnotCamera tkc = TorusKnotCamera(kRadius, 2, 3, kHeightScale);
+  final TORUS.TorusKnotCamera tkc = TORUS.TorusKnotCamera(TORUS.kRadius, 2, 3, TORUS.kHeightScale);
   // manual
-  final CGL.OrbitCamera mc = CGL.OrbitCamera(kRadius * 1.5, 0.0, 0.0, canvas)
+  final CGL.OrbitCamera mc = CGL.OrbitCamera(TORUS.kRadius * 1.5, 0.0, 0.0, canvas)
     ..mouseWheelFactor = -0.2;
 
   final CGL.OrbitCamera oc = CGL.OrbitCamera(100, 0.0, 0.0, canvas);
@@ -704,7 +703,7 @@ void main() {
 
   final Math.Random rng = Math.Random(0);
 
-  tkc.SetTubeRadius(kTubeRadius + 50.0);
+  tkc.SetTubeRadius(TORUS.kTubeRadius + 50.0);
   tkc.animate(0, 1.0, "9");
   iac.ci.setDst(tkc.transform);
   iac.cameraFinalPos.setFrom(tkc.getPoint());
@@ -760,7 +759,7 @@ void main() {
         }
       }
     } else {
-      double radius = kTubeRadius + 50.0;
+      double radius = TORUS.kTubeRadius + 50.0;
       if (gMode.value.contains("inside")) {
         radius = 1.0;
       }
