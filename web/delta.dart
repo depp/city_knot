@@ -181,15 +181,6 @@ class Scene {
     mesh = CGL.GeometryBuilderToMeshData("buildings", program, buildings);
   }
 
-  Scene.InsidePlasma(CGL.ChronosGL cgl, CGL.GeometryBuilder torus) {
-    mat = CGL.Material("plasma")
-      ..SetUniform(CGL.uModelMatrix, VM.Matrix4.identity())
-      ..ForceUniform(CGL.cBlendEquation, CGL.BlendEquationStandard);
-    program = CGL.RenderProgram("plasma", cgl, CGL.perlinNoiseVertexShader,
-        CGL.makePerlinNoiseColorFragmentShader(false));
-    mesh = CGL.GeometryBuilderToMeshData("plasma", program, torus);
-  }
-
   Scene.InsideWireframe(CGL.ChronosGL cgl, CGL.GeometryBuilder torus) {
     mat = CGL.Material("wf")
       ..SetUniform(CGL.uModelMatrix, VM.Matrix4.identity())
@@ -514,7 +505,6 @@ class AllScenes {
         InsideTorusKnotWireframe(kHeight ~/ 8, kWidth ~/ 8);
     final torusWFeHex = TorusKnotWireframeHexagons(kHeight ~/ 8, kWidth ~/ 8);
 
-    insidePlasma = Scene.InsidePlasma(cgl, torusWF);
     insideWireframe = Scene.InsideWireframe(cgl, torusWF);
     insideWireframeHex = Scene.InsideWireframe(cgl, torusWFeHex);
     insideGOL1 = SceneGOL.Variant1(cgl, w, h, rng);
@@ -537,7 +527,6 @@ class AllScenes {
 
   Scene outsideSketch;
 
-  Scene insidePlasma;
   Scene insideWireframe;
   Scene insideWireframeHex;
   Scene insideGOL1;
@@ -624,7 +613,6 @@ class AllScenes {
       //matBuilding.ForceUniform(uWidth, alpha);
     }
 
-    insidePlasma.mat.ForceUniform(CGL.uTime, timeMs / 5000.0);
     switch (name) {
       case "wireframe-outside":
         outsideWireframeBuildings.Draw(cgl, perspective);
@@ -635,11 +623,6 @@ class AllScenes {
       case "wireframe-orbit":
         outsideWireframeBuildings.Draw(cgl, perspective);
         outsideStreet.Draw(cgl, perspective);
-        break;
-      case "plasma-inside":
-        outsideWireframeBuildings.Draw(cgl, perspective);
-        insidePlasma.Draw(cgl, perspective);
-        portal.Draw(cgl, perspective);
         break;
       case "wireframe-inside-hexagon":
         outsideWireframeBuildings.Draw(cgl, perspective);
