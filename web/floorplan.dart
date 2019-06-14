@@ -34,7 +34,7 @@ import 'logging.dart';
 
 const double kMaxCarMovement = 0.5;
 
-const int kMinBuildingSize = 12;
+const int kMinBuildingSize = 9;
 const int kMinRoadDistance = 25;
 
 const int kTileEmpty = 0;
@@ -118,6 +118,8 @@ class WorldMap {
   }
 
   bool IsEmpty(int x, int y) {
+    if (x >= _w) x -= _w;
+    if (y >= _h) y -= _h;
     int index = x + y * _w;
     return _tiles[index] == kTileEmpty;
   }
@@ -546,47 +548,45 @@ class Floorplan {
 
   // Fill rest of m
   void InitBuildings(Random rng) {
-    GEOMETRY.Rect plot = GEOMETRY.Rect(0.0, 0.0, 0.0, 0.0);
     for (int x = 0; x < _w - kMinBuildingSize; x++) {
       for (int y = 0; y < _h - kMinBuildingSize; y++) {
         if (!_map.IsEmpty(x, y)) continue;
+
+        // target building size
+        // we may lower this to kMinBuildingSize in each dimension
+        // but we must lower the target equally in reach dimension.
         int w = kMinBuildingSize + rng.nextInt(20);
         int h = kMinBuildingSize + rng.nextInt(20);
         //int m = min(w, h);
 
-        if (x + w > _w) w = _w - x;
-        if (y + h > _h) h = _h - y;
-
-        for (int yy = y; yy < y + h; yy++) {
-          if (_map.IsEmpty(x, yy)) continue;
-          int delta = y + h - yy;
-          if (delta > 0) {
-            h -= delta;
-            w -= delta;
-          }
+        int yy;
+        for (yy = y; yy < y + h; yy++) {
+          if (!_map.IsEmpty(x, yy)) break;
         }
 
-        if (w < 9) continue;
-        if (h < 9) continue;
-
-        for (int xx = x; xx < x + w; xx++) {
-          if (_map.IsEmpty(xx, y)) continue;
-          int delta = x + w - xx;
-          if (delta > 0) {
-            h -= delta;
-            w -= delta;
-          }
+        if (yy - y < kMinBuildingSize) {
+          // y += kMinBuildingSize - 1;
+          continue;
         }
-        if (w < 9) continue;
-        if (h < 9) continue;
+
+        int xx;
+        for (xx = x; xx < x + w; xx++) {
+          if (!_map.IsEmpty(xx, y)) break;
+        }
+
+        if (xx - x < kMinBuildingSize) continue;
+
+        int delta = max(y + h - yy, x + w - xx);
+        w -= delta;
+        h -= delta;
+
+        if (h < kMinBuildingSize) continue;
+        if (w < kMinBuildingSize) continue;
 
         double altitude = 10.0 + rng.nextInt(15);
         int offset = 1;
         int kind = kTileBuildingSimple;
-        plot.x = x * 1.0;
-        plot.y = y * 1.0;
-        plot.w = w * 1.0;
-        plot.h = h * 1.0;
+        GEOMETRY.Rect plot = GEOMETRY.Rect(x + 0.0, y + 0.0, w + 0.0, h +0.0);
         // TODO
 
         /*
@@ -635,17 +635,17 @@ class Floorplan {
   }
 }
 
-final Map<int, VM.Vector3> kTileToColorsExtrame = {
+final Map<int, VM.Vector3> kTileToColorsExtreme = {
   kTileEmpty: VM.Vector3(0.1, 0.1, 0.1),
   kTileLane: VM.Vector3(1.0, 0.0, 0.0),
-  kTileSidewalk: VM.Vector3(0.0, 1.0, 1.0),
-  kTileSidewalkLight: VM.Vector3(0.0, 1.0, 0.0),
+  kTileSidewalk: VM.Vector3(0.5, 0.5, 0.5),
+  kTileSidewalkLight: VM.Vector3(1.0, 1.0, 1.0),
   kTileDivider: VM.Vector3(1.0, 1.0, 0.0),
-  kTileBuildingSimple: VM.Vector3(0.0, 0.0, 0.5),
+  kTileBuildingSimple: VM.Vector3(1.0, 0.0, 1.0),
   kTileBuildingTower: VM.Vector3(0.0, 0.0, 1.0),
   kTileBuildingModern: VM.Vector3(0.0, 0.0, 1.0),
   kTileBuildingBlocky: VM.Vector3(0.0, 0.0, 1.0),
-  kTileBuildingBorder: VM.Vector3(0.0, 0.0, 1.0),
+  kTileBuildingBorder: VM.Vector3(1.0, 1.0, 1.0),
 };
 
 final kDarkGray = VM.Vector3(0.05, 0.05, 0.05);
@@ -665,7 +665,7 @@ final Map<int, VM.Vector3> kTileToColorsStandard = {
 
 HTML.CanvasElement RenderCanvasWorldMap(WorldMap wm,
     [Map<int, VM.Vector3> tileMap]) {
-  tileMap = tileMap ?? kTileToColorsExtrame;
+  tileMap = tileMap ?? kTileToColorsExtreme;
   final int w = wm.width;
   final int h = wm.height;
   final HTML.CanvasElement canvas = HTML.CanvasElement()
