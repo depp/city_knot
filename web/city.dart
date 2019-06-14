@@ -11,37 +11,8 @@ import 'geometry.dart';
 import 'theme.dart' as THEME;
 import 'torus.dart' as TORUS;
 
-void ExtractTransformsAtTorusSurface(CGL.GeometryBuilder torus, int kWidth,
-    Rect base, double height, VM.Matrix4 mat, VM.Matrix3 matNormal) {
-  VM.Vector3 GetVertex(int x, int y) {
-    return torus.vertices[x + y * (kWidth + 1)];
-  }
-
-  final int y = base.x.floor();
-  final int x = base.y.floor();
-  final int h = base.w.floor();
-  final int w = base.h.floor();
-  VM.Vector3 center = GetVertex(x + w ~/ 2, y + h ~/ 2);
-  VM.Vector3 centerW = GetVertex(x + w ~/ 2 + 1, y + h ~/ 2);
-  VM.Vector3 centerH = GetVertex(x + w ~/ 2, y + h ~/ 2 + 1);
-
-  VM.Vector3 dir1 = centerW - center;
-  VM.Vector3 dir2 = centerH - center;
-  VM.Vector3 dir3 = dir1.cross(dir2)..normalize();
-  VM.Vector3 pos = center + dir3.scaled(height);
-  //node.setPosFromVec(pos);
-
-  //VM.setViewMatrix(node.transform, pos, center, dir1);
-  VM.setViewMatrix(mat, VM.Vector3.zero(), dir3, dir1);
-  mat.invert();
-  mat.setTranslation(pos);
-
-  // TODO: this is not quite correct
-  mat.copyRotation(matNormal);
-}
 
 void ExtractTransformsAtTorusSurfaceCity(
-    CGL.GeometryBuilder torus,
     TORUS.TorusKnotHelper tkhelper,
     int kWidth,
     int kHeight,
@@ -83,8 +54,6 @@ void ExtractTransformsAtTorusSurfaceCity(
   mat.copyRotation(matNormal);
 }
 
-
-
 void _AddOneBuilding(Shape shape, Math.Random rng, THEME.BuildingColors colors,
     RoofOptions roofOpt, THEME.RoofFeatures rf, FLOORPLAN.Building b) {
   //print ("building ${b}");
@@ -117,7 +86,6 @@ Shape MakeBuildings(
     Math.Random rng,
     double seed,
     List<FLOORPLAN.Building> buildings,
-    CGL.GeometryBuilder torus,
     TORUS.TorusKnotHelper tkhelper,
     int kWidth,
     int kHeight,
@@ -140,7 +108,7 @@ Shape MakeBuildings(
     final THEME.RoofFeatures rf = theme.roofFeatures;
 
     ExtractTransformsAtTorusSurfaceCity(
-        torus, tkhelper, kWidth, kHeight, b.base, b.height, mat, matNormal);
+        tkhelper, kWidth, kHeight, b.base, b.height, mat, matNormal);
 
     Rect oldbase = b.base;
 

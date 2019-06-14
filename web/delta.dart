@@ -341,7 +341,6 @@ class SceneSketch extends Scene {
         rng,
         666.0,
         floorplan.GetBuildings(),
-        torus,
         tkhelper,
         kWidth,
         kHeight,
@@ -428,7 +427,7 @@ class SceneCityNight extends Scene {
     final THEME.Theme theme = THEME.allThemes[THEME.kModeNight];
 
     Shape shape = CITY.MakeBuildings(cgl, rng, 666.0, floorplan.GetBuildings(),
-        torus, tkhelper, kWidth, kHeigth, ["delta", "alpha"], theme);
+        tkhelper, kWidth, kHeigth, ["delta", "alpha"], theme);
     print(">>>>>>> ${shape}");
 
     Map<String, CGL.Material> materials =
@@ -487,7 +486,7 @@ class SceneCityWireframe extends Scene {
     final THEME.Theme theme = THEME.allThemes[THEME.kModeWireframe];
 
     Shape shape = CITY.MakeBuildings(cgl, rng, 666.0, floorplan.GetBuildings(),
-        torus, tkhelper, kWidth, kHeight, ["delta", "alpha"], theme);
+        tkhelper, kWidth, kHeight, ["delta", "alpha"], theme);
     print(">>>>>>> ${shape}");
 
     Map<String, CGL.Material> materials =
@@ -527,7 +526,7 @@ class SceneCityWireframe extends Scene {
   void Draw(CGL.ChronosGL cgl, CGL.Perspective perspective) {
     screen.Activate(CGL.GL_CLEAR_ALL, 0, 0, w, h);
     for (CGL.Material m in meshes.keys)
-      if (m.name == "logos") {
+      if (m.name == CONFIG.kLogoMat) {
         programLogo.Draw(meshes[m], [perspective, m]);
       } else {
         program.Draw(meshes[m], [perspective, m]);
