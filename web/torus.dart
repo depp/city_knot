@@ -5,24 +5,6 @@ import 'dart:math' as Math;
 import 'package:chronosgl/chronosgl.dart' as CGL;
 import 'package:vector_math/vector_math.dart' as VM;
 
-void buildPlaneVectors(
-    final VM.Vector3 planeNormal, VM.Vector3 u, VM.Vector3 v) {
-  final double a =
-      planeNormal.x * planeNormal.x + planeNormal.y * planeNormal.y;
-  final double k = 1.0 / Math.sqrt(a);
-  u
-    ..x = -planeNormal.y * k
-    ..y = planeNormal.x * k
-    ..z = 0.0
-    ..normalize();
-
-  v
-    ..x = -planeNormal.z * planeNormal.x * k
-    ..y = -planeNormal.y * planeNormal.z * k
-    ..z = a * k
-    ..normalize();
-}
-
 VM.Vector3 getRoute(VM.Vector3 v1, VM.Vector3 v2, String route) {
   switch (route) {
     case "0":
@@ -73,7 +55,9 @@ class TorusKnotHelper {
       ..setFrom(target)
       ..sub(point);
 
-    buildPlaneVectors(tangent, v1, v2);
+    CGL.buildPlaneVectors(tangent, v1, v2);
+    v1.normalize();
+    v2.normalize();
     offset
       ..setZero()
       ..addScaled(v1, tubeRadius * Math.cos(tubeAzimuth))

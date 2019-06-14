@@ -500,13 +500,6 @@ class AllScenes {
     LogInfo("creating buildingcenes done");
 
     // Other Scenes
-    LogInfo("creating other scenes");
-    final CGL.GeometryBuilder torusWF =
-        InsideTorusKnotWireframe(kHeight ~/ 8, kWidth ~/ 8);
-    final torusWFeHex = TorusKnotWireframeHexagons(kHeight ~/ 8, kWidth ~/ 8);
-
-    insideWireframe = Scene.InsideWireframe(cgl, torusWF);
-    insideWireframeHex = Scene.InsideWireframe(cgl, torusWFeHex);
     insideGOL1 = SceneGOL.Variant1(cgl, w, h, rng);
     insideGOL2 = SceneGOL.Variant2(cgl, w, h, rng);
 
@@ -527,8 +520,6 @@ class AllScenes {
 
   Scene outsideSketch;
 
-  Scene insideWireframe;
-  Scene insideWireframeHex;
   Scene insideGOL1;
   Scene insideGOL2;
 
@@ -602,16 +593,6 @@ class AllScenes {
     portal.mat.ForceUniform(CGL.uTime, timeMs);
     finale.mat.ForceUniform(CGL.uTime, timeMs / 1000.0);
 
-    if (name == "wireframe-inside-varying-width" ||
-        name == "wireframe-inside-hexagon") {
-      double alpha = Math.sin(timeMs / 2000.0) * 10.0 + 11.0;
-      insideWireframe.mat.ForceUniform(uWidth, alpha);
-      insideWireframeHex.mat.ForceUniform(uWidth, alpha);
-    } else {
-      insideWireframe.mat.ForceUniform(uWidth, 2.5);
-      insideWireframeHex.mat.ForceUniform(uWidth, 2.5);
-      //matBuilding.ForceUniform(uWidth, alpha);
-    }
 
     switch (name) {
       case "wireframe-outside":
@@ -623,17 +604,6 @@ class AllScenes {
       case "wireframe-orbit":
         outsideWireframeBuildings.Draw(cgl, perspective);
         outsideStreet.Draw(cgl, perspective);
-        break;
-      case "wireframe-inside-hexagon":
-        outsideWireframeBuildings.Draw(cgl, perspective);
-        insideWireframeHex.Draw(cgl, perspective);
-        portal.Draw(cgl, perspective);
-        break;
-      case "wireframe-inside":
-      case "wireframe-inside-varying-width":
-        outsideWireframeBuildings.Draw(cgl, perspective);
-        insideWireframe.Draw(cgl, perspective);
-        portal.Draw(cgl, perspective);
         break;
       case "gol-inside":
         insideGOL1.Draw(cgl, perspective);
