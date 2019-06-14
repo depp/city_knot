@@ -178,12 +178,9 @@ final _FullFeaturedRoof = RoofFeatures()
   ..allowGlobeLight = false;
 final _WireframeRoof = RoofFeatures()
   ..allowRadioTower = false
-  ..allowLogo = false
-  ..allowGlobeLight = false
-  ..allowLightStrip = false;
+  ..allowGlobeLight = false;
 final _OnlyLogoRoof = RoofFeatures()
   ..allowGlobeLight = false
-  ..allowLightStrip = false
   ..allowRadioTower = false;
 
 const int kWallStyleNone = 1;
@@ -196,11 +193,10 @@ class Theme {
       this.name,
       this.laneColor,
       this.otherColor,
-      this.logoFgColor,
-      this.logoBgColor,
       this.wallStyle,
       this.hasLights,
       this.shaderBuilding,
+      this.shaderLogo,
       this.shaderStreet,
       this.shaderSky,
       this.colorFun,
@@ -211,11 +207,10 @@ class Theme {
   final String name;
   final RGB laneColor;
   final RGB otherColor;
-  final RGB logoFgColor;
-  final RGB logoBgColor;
   final int wallStyle;
   final bool hasLights;
   final String shaderBuilding;
+  final String shaderLogo;
   final String shaderStreet;
   final String shaderSky;
   final ColorFactoryFun colorFun;
@@ -227,10 +222,9 @@ Map<String, Theme> allThemes = {
       kModeNight,
       RGB.fromGray(0x10),
       RGB.fromGray(0x15),
-      kRGBwhite,
-      kRGBblack,
       kWallStyleNight,
       true,
+      kShaderTexturedWithFog,
       kShaderTexturedWithFog,
       kShaderTexturedWithFog,
       kShaderTexturedWithFog,
@@ -240,63 +234,22 @@ Map<String, Theme> allThemes = {
       kModeWireframe,
       RGB.fromGray(0x20),
       RGB.fromGray(0x30),
-      kRGBblack,
-      kRGBblack,
       kWallStyleNone,
       true,
       kShaderWireframe,
       kShaderTextured,
       kShaderTextured,
+      kShaderTextured,
       DayBuildingColors,
       _WireframeRoof),
-  kModeDaySimple: Theme(
-      kModeDaySimple,
-      RGB.fromGray(0x80),
-      RGB.fromGray(0xa0),
-      kRGBblack,
-      kRGBwhite,
-      kWallStyleDay,
-      false,
-      kShaderTextured,
-      kShaderTextured,
-      kShaderTextured,
-      DayBuildingColors,
-      _OnlyLogoRoof),
-  kModeDayFancy: Theme(
-      kModeDayFancy,
-      RGB.fromGray(0x80),
-      RGB.fromGray(0xa0),
-      kRGBblack,
-      kRGBwhite,
-      kWallStyleDay,
-      false,
-      kShaderTextured,
-      kShaderTextured,
-      kShaderTextured,
-      DayBuildingColors,
-      _OnlyLogoRoof),
-  kModeDayShadow: Theme(
-      kModeDayShadow,
-      RGB.fromGray(0x80),
-      RGB.fromGray(0xa0),
-      kRGBblack,
-      kRGBblack,
-      kWallStyleDay,
-      false,
-      kShaderTexturedWithShadow,
-      kShaderTexturedWithShadow,
-      kShaderTexturedWithShadow,
-      DayBuildingColors,
-      _OnlyLogoRoof),
   kModeSketch: Theme(
       kModeSketch,
       RGB.fromGray(0x80),
       RGB.fromGray(0xa0),
-      kRGBblack,
-      kRGBwhite,
       kWallStyleSketch,
       true,
       kShaderSketchPrep,
+      kShaderTextured,
       kShaderTextured,
       kShaderTextured,
       DayBuildingColors,

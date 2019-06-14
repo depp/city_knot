@@ -435,6 +435,9 @@ class SceneCityWireframe extends Scene {
     program = CGL.RenderProgram(
         "final", cgl, wireframeVertexShader, wireframeFragmentShader);
 
+    programLogo = CGL.RenderProgram(
+        "final", cgl, pcTexturedVertexShader, pcTexturedFragmentShader);
+
     Shape shape = CITY.MakeBuildings(
         cgl,
         rng,
@@ -454,20 +457,31 @@ class SceneCityWireframe extends Scene {
         ..SetUniform(CGL.uColor, VM.Vector3(1.0, 1.0, 0.0))
         ..SetUniform(CGL.uColorAlpha, VM.Vector4(1.0, 0.0, 0.0, 1.0))
         ..SetUniform(CGL.uColorAlpha2, VM.Vector4(0.1, 0.0, 0.0, 1.0));
-
-      meshes[m] = CGL.GeometryBuilderToMeshData("", program, shape.builders[m]);
+      if (m.name == "logos") {
+        meshes[m] =
+            CGL.GeometryBuilderToMeshData(m.name, programLogo, shape.builders[m]);
+      } else {
+        meshes[m] =
+            CGL.GeometryBuilderToMeshData(m.name, program, shape.builders[m]);
+      }
     }
   }
 
   void Draw(CGL.ChronosGL cgl, CGL.Perspective perspective) {
     screen.Activate(CGL.GL_CLEAR_ALL, 0, 0, w, h);
     for (CGL.Material m in meshes.keys)
-      program.Draw(meshes[m], [perspective, m]);
+      if (m.name == "logos") {
+        programLogo.Draw(meshes[m], [perspective, m]);
+        print("do logos");
+      } else {
+        program.Draw(meshes[m], [perspective, m]);
+      }
   }
 
   int w, h;
   Map<CGL.Material, CGL.MeshData> meshes = {};
   CGL.Framebuffer screen;
+  CGL.RenderProgram programLogo;
 }
 
 class AllScenes {

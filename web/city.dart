@@ -15,7 +15,6 @@ import 'rgb.dart';
 import 'theme.dart' as THEME;
 import 'torus.dart';
 
-
 void ExtractTransformsAtTorusSurface(CGL.GeometryBuilder torus, int kWidth,
     Rect base, double height, VM.Matrix4 mat, VM.Matrix3 matNormal) {
   VM.Vector3 GetVertex(int x, int y) {
@@ -88,7 +87,6 @@ void ExtractTransformsAtTorusSurfaceCity(
   mat.copyRotation(matNormal);
 }
 
-
 List<CGL.Material> MakeWallMaterials(
     CGL.ChronosGL cgl, Math.Random rng, double seed, int style) {
   switch (style) {
@@ -119,7 +117,6 @@ void _AddOneBuilding(
   switch (b.kind) {
     case FLOORPLAN.kTileBuildingTower:
       var opt = BuildingTowerOptions(rng, params, colors, b.height > 40.0);
-
       AddBuildingTower(shape, rng, b.base, b.height, opt, roofOpt, rf);
       break;
     case FLOORPLAN.kTileBuildingBlocky:
@@ -154,9 +151,20 @@ Shape MakeBuildings(
     THEME.Theme theme) {
   print("Make building materials");
 
-  final CGL.Material logo = theme.roofFeatures.allowLogo
-      ? FACADE.MakeLogo(cgl, logos, theme.logoFgColor, theme.logoBgColor)
-      : CGL.Material("dummy");
+  CGL.Material logo;
+  switch (theme.name) {
+    case THEME.kModeNight:
+      logo = FACADE.MakeLogo(cgl, logos, kRGBwhite, kRGBblack);
+      break;
+    case THEME.kModeWireframe:
+      logo = FACADE.MakeLogo(cgl, logos, kRGBred, kRGBblack);
+      break;
+    case THEME.kModeSketch:
+      logo = FACADE.MakeLogo(cgl, logos, kRGBblack, kRGBwhite);
+      break;
+    default:
+      assert(false, "bad theme ${theme.name}");
+  }
 
   final BuildingParameters params = BuildingParameters()
     ..wallMats = MakeWallMaterials(cgl, rng, seed, theme.wallStyle)
