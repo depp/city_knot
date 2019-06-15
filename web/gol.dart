@@ -17,12 +17,15 @@ final int kLiveThreshold = -5;
 const String uRules = "uRules";
 const String uState = "uState";
 const String uScaleSize = "uScaleSize";
+const String uUVRepeats = "uUVRepeats";
 
 void RegisterShaderVars() {
   IntroduceNewShaderVar(uRules, ShaderVarDesc(VarTypeSampler2D, ""));
   IntroduceNewShaderVar(uState, ShaderVarDesc(VarTypeSampler2D, ""));
   IntroduceNewShaderVar(uScaleSize, ShaderVarDesc(VarTypeVec2, ""));
+  IntroduceNewShaderVar(uUVRepeats, ShaderVarDesc(VarTypeVec2, ""));
 }
+
 // The vertex shader received a unit square
 // The fragment shader uses pixel coordinates
 final ShaderObject lifeStateVertexShader = ShaderObject("GOL-Vertex")
@@ -196,7 +199,7 @@ Uint8List SetPaletteMono(List<int> fg, List<int> bg) {
 }
 
 TypedTextureMutable MakeStateTexture(
-    String name, ChronosGL cgl, int w, int h, bool wrapped) =>
+        String name, ChronosGL cgl, int w, int h, bool wrapped) =>
     TypedTextureMutable(
         cgl,
         name,
@@ -213,7 +216,7 @@ TypedTextureMutable MakeStateTexture(
 class Life {
   Life(ChronosGL cgl, this._w, this._h, this._scale, bool wrapped)
       : _rules = TypedTextureMutable(cgl, "rules", kNumRules, 1, GL_RGBA,
-      TexturePropertiesFramebuffer, GL_RGBA, GL_UNSIGNED_BYTE, null),
+            TexturePropertiesFramebuffer, GL_RGBA, GL_UNSIGNED_BYTE, null),
         _palette = TypedTextureMutable(cgl, "palette", kNumRules, 1, GL_RGBA,
             TexturePropertiesFramebuffer, GL_RGBA, GL_UNSIGNED_BYTE, null),
         _states = [
@@ -371,3 +374,29 @@ class Life {
         rgbah, GL_RGBA, GL_UNSIGNED_BYTE, _w - 1, 0, 1, _h);
   }
 }
+
+final ShaderObject texturedVertexShaderWithRepeats = ShaderObject("Textured")
+  ..AddAttributeVars([aPosition, aTexUV])
+  ..AddUniformVars([uPerspectiveViewMatrix, uModelMatrix])
+  ..AddVaryingVars([vTexUV])
+  ..SetBody([
+    """
+void main() {
+  gl_Position = ${uPerspectiveViewMatrix} * 
+                ${uModelMatrix} * 
+                vec4(${aPosition}, 1.0);
+  ${vTexUV} = ${aTexUV};
+}
+"""
+  ]);
+
+final ShaderObject texturedFragmentShaderWithRepeats = ShaderObject("TexturedF")
+  ..AddVaryingVars([vTexUV])
+  ..AddUniformVars([uColor, uTexture, uUVRepeats])
+  ..SetBodyWithMain([
+    """
+    vec2 uv = mod(${vTexUV} * ${uUVRepeats}, vec2(1.0, 1.0));
+    //vec2 uv = ${vTexUV} * ${uUVRepeats};
+    ${oFragColor} = texture(${uTexture}, uv) + vec4( ${uColor}, 0.0 );
+    """
+  ]);

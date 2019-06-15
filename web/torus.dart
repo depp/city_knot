@@ -20,7 +20,8 @@ const double kBuildingDim = 20;
 // Note, this is too large for most graphic cards and you may want
 // to divide this by 2 or 4 during development
 const int GOLWidth = kWidth ~/ 2;
-const int GOLHeight = kHeight ~/ 2;
+const int GOLHeightRepeats = 4;
+const int GOLHeight = kHeight ~/ 2 ~/ GOLHeightRepeats;
 
 CGL.GeometryBuilder TorusKnot(int segmentsR, int segmentsT) {
   LogInfo("start torus gb ${kWidth}x${kHeight}");

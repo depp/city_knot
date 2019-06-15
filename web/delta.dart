@@ -77,10 +77,10 @@ final List<ScriptScene> gScript = [
   ScriptScene("night-orbit", 16.0 * kTimeUnit, 1.0, 0, 0.0),
   ScriptScene(
       "night-outside", 32.0 * kTimeUnit, 0.5, 9, TORUS.kTubeRadius + 50.0),
-  ScriptScene("gol-inside", 32.0 * kTimeUnit, 0.9, 6, 1.0),
+  ScriptScene("gol-inside", 32.0 * kTimeUnit, 1.0, 6, 1.0),
   ScriptScene(
       "wireframe-outside", 32.0 * kTimeUnit, 0.7, 3, TORUS.kTubeRadius + 50.0),
-  ScriptScene("gol2-inside", 16.0 * kTimeUnit, 1.1, 6, 1.0),
+  ScriptScene("gol2-inside", 16.0 * kTimeUnit, 1.3, 6, 1.0),
   ScriptScene(
       "sketch-outside", 32.0 * kTimeUnit, 0.5, 0, TORUS.kTubeRadius + 50.0),
   ScriptScene("finale", 16.0 * kTimeUnit, 1.0, 0, 0.0),
@@ -312,8 +312,8 @@ class Scene {
 
 class SceneGOL extends Scene {
   SceneGOL(CGL.ChronosGL cgl, this.w, this.h, CGL.GeometryBuilder torus) {
-    program = CGL.RenderProgram(
-        "gol", cgl, texturedVertexShader, texturedFragmentShader);
+    program = CGL.RenderProgram("gol", cgl, GOL.texturedVertexShaderWithRepeats,
+        GOL.texturedFragmentShaderWithRepeats);
     mesh = CGL.GeometryBuilderToMeshData("gol", program, torus);
 
     fb = CGL.Framebuffer.Default(cgl, TORUS.GOLHeight * 4, TORUS.GOLWidth * 4);
@@ -324,6 +324,8 @@ class SceneGOL extends Scene {
     mat = CGL.Material("gol")
       ..SetUniform(CGL.uModelMatrix, VM.Matrix4.identity())
       ..SetUniform(CGL.uTexture, fb.colorTexture)
+      ..SetUniform(
+          GOL.uUVRepeats, VM.Vector2(TORUS.GOLHeightRepeats + 0.0, 1.0))
       ..SetUniform(CGL.uColor, VM.Vector3(0.1, 0.0, 0.0));
   }
 
@@ -751,8 +753,6 @@ class AllScenes {
   }
 }
 
-
-
 void main() {
   final CGL.StatsFps fps =
       CGL.StatsFps(HTML.document.getElementById("stats"), "blue", "gray");
@@ -775,6 +775,15 @@ void main() {
   final HTML.CanvasElement canvas =
       HTML.document.querySelector('#webgl-canvas');
   final CGL.ChronosGL cgl = CGL.ChronosGL(canvas)..enable(CGL.GL_CULL_FACE);
+
+  var ext = cgl.GetGlExtensionAnisotropic();
+  if (ext == null) {
+    CGL.LogError("No anisotropic texture extension");
+  } else {
+    final int mafl = cgl.MaxAnisotropicFilterLevel();
+    FACADE.defaultAnisoLevel = mafl > 4 ? 4 : mafl;
+    print ("setting AnisoLevel to ${FACADE.defaultAnisoLevel}");
+  }
 
   // Cameras
 
