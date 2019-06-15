@@ -76,13 +76,13 @@ double kTimeUnit = 1000;
 final List<ScriptScene> gScript = [
   ScriptScene("night-orbit", 16.0 * kTimeUnit, 1.0, 0, 0.0),
   ScriptScene(
-      "night-outside", 32.0 * kTimeUnit, 0.6, 9, TORUS.kTubeRadius + 50.0),
+      "night-outside", 32.0 * kTimeUnit, 0.5, 9, TORUS.kTubeRadius + 50.0),
   ScriptScene("gol-inside", 32.0 * kTimeUnit, 0.9, 6, 1.0),
   ScriptScene(
-      "wireframe-outside", 32.0 * kTimeUnit, 0.8, 3, TORUS.kTubeRadius + 50.0),
+      "wireframe-outside", 32.0 * kTimeUnit, 0.7, 3, TORUS.kTubeRadius + 50.0),
   ScriptScene("gol2-inside", 16.0 * kTimeUnit, 1.1, 6, 1.0),
   ScriptScene(
-      "sketch-outside", 32.0 * kTimeUnit, 0.6, 0, TORUS.kTubeRadius + 50.0),
+      "sketch-outside", 32.0 * kTimeUnit, 0.5, 0, TORUS.kTubeRadius + 50.0),
   ScriptScene("finale", 16.0 * kTimeUnit, 1.0, 0, 0.0),
 ];
 
@@ -860,7 +860,7 @@ void main() {
       // place portal early so we can see it right aways
       allScenes.PlacePortal(t, 10000, 1.0, radius, tkc);
       allScenes.UpdateCameras(
-          gTheme.value, perspective, t, 1.0, radius, tkc, iac, fc, oc);
+          gTheme.value, perspective, t, 0.5, radius, tkc, iac, fc, oc);
       allScenes.RenderScene(gTheme.value, cgl, perspective, t);
     }
 
