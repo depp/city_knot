@@ -61,6 +61,31 @@ final List<String> kLogos = []
   ..addAll(kLogos8)
   ..addAll(kLogos8);
 
+class ScriptScene {
+  ScriptScene(this.name, this.durationMs, this.speed, this.route, this.radius);
+
+  final String name;
+  final double durationMs;
+  final double speed;
+  final int route;
+  final double radius;
+}
+
+double kTimeUnit = 1000;
+
+final List<ScriptScene> gScript = [
+  ScriptScene("night-orbit", 16.0 * kTimeUnit, 1.0, 0, 0.0),
+  ScriptScene(
+      "night-outside", 32.0 * kTimeUnit, 0.6, 9, TORUS.kTubeRadius + 50.0),
+  ScriptScene("gol-inside", 32.0 * kTimeUnit, 0.9, 6, 1.0),
+  ScriptScene(
+      "wireframe-outside", 32.0 * kTimeUnit, 0.8, 3, TORUS.kTubeRadius + 50.0),
+  ScriptScene("gol2-inside", 16.0 * kTimeUnit, 1.1, 6, 1.0),
+  ScriptScene(
+      "sketch-outside", 32.0 * kTimeUnit, 0.6, 0, TORUS.kTubeRadius + 50.0),
+  ScriptScene("finale", 16.0 * kTimeUnit, 1.0, 0, 0.0),
+];
+
 Map<String, String> HashParameters() {
   final Map<String, String> out = {};
 
@@ -124,7 +149,7 @@ class InitialApproachCamera extends CGL.Spatial {
   void animate(double timeMs) {
     range = (transform.getTranslation() - ci.tdst).length;
     double dur = 11000;
-    double dur2 = 16000;
+    double dur2 = gScript[0].durationMs;
 
     if (timeMs >= dur) {
       if (lastTime < dur) {
@@ -726,30 +751,7 @@ class AllScenes {
   }
 }
 
-class ScriptScene {
-  ScriptScene(this.name, this.durationMs, this.speed, this.route, this.radius);
 
-  final String name;
-  final double durationMs;
-  final double speed;
-  final int route;
-  final double radius;
-}
-
-double kTimeUnit = 1000;
-
-final List<ScriptScene> gScript = [
-  ScriptScene("night-orbit", 16.0 * kTimeUnit, 1.0, 0, 0.0),
-  ScriptScene(
-      "night-outside", 32.0 * kTimeUnit, 1.0, 9, TORUS.kTubeRadius + 50.0),
-  ScriptScene("gol-inside", 32.0 * kTimeUnit, 1.0, 6, 1.0),
-  ScriptScene(
-      "wireframe-outside", 32.0 * kTimeUnit, 1.2, 3, TORUS.kTubeRadius + 50.0),
-  ScriptScene("gol2-inside", 16.0 * kTimeUnit, 1.5, 6, 1.0),
-  ScriptScene(
-      "sketch-outside", 32.0 * kTimeUnit, 1.0, 0, TORUS.kTubeRadius + 50.0),
-  ScriptScene("finale", 16.0 * kTimeUnit, 1.0, 0, 0.0),
-];
 
 void main() {
   final CGL.StatsFps fps =
