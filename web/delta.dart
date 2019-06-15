@@ -43,6 +43,23 @@ final HTML.Element gMusic = HTML.document.querySelector('#music');
 final HTML.Element gPaused = HTML.document.querySelector('#paused');
 
 final HTML.Element gInitializing = HTML.document.querySelector('#initializing');
+final List<String> kLogos8 = [
+  "@Party Somerville",
+  "June 2019",
+  "moria.us",
+  "muth.org",
+  "nettoyeurny",
+  "Ebb Industries",
+  "Muth Inc",
+  "dartlang",
+];
+
+// This needs to have size 32
+final List<String> kLogos = []
+  ..addAll(kLogos8)
+  ..addAll(kLogos8)
+  ..addAll(kLogos8)
+  ..addAll(kLogos8);
 
 Map<String, String> HashParameters() {
   final Map<String, String> out = {};
@@ -364,7 +381,7 @@ class SceneSketch extends Scene {
     print(">>>>>>> ${shape}");
 
     Map<String, CGL.Material> materials =
-        FACADE.MakeMaterialsForTheme(cgl, theme, [], rng, 0.0);
+        FACADE.MakeMaterialsForTheme(cgl, theme, kLogos, rng, 0.0);
 
     Map<CGL.Material, CGL.GeometryBuilder> consolidator = {};
 
@@ -431,7 +448,7 @@ class SceneCityNight extends Scene {
     print(">>>>>>> ${shape}");
 
     Map<String, CGL.Material> materials =
-        FACADE.MakeMaterialsForTheme(cgl, theme, [], rng, 0.0);
+        FACADE.MakeMaterialsForTheme(cgl, theme, kLogos, rng, 0.0);
 
     Map<CGL.Material, CGL.GeometryBuilder> consolidator = {};
 
@@ -490,7 +507,7 @@ class SceneCityWireframe extends Scene {
     print(">>>>>>> ${shape}");
 
     Map<String, CGL.Material> materials =
-        FACADE.MakeMaterialsForTheme(cgl, theme, [], rng, 0.0);
+        FACADE.MakeMaterialsForTheme(cgl, theme, kLogos, rng, 0.0);
 
     Map<CGL.Material, CGL.GeometryBuilder> consolidator = {};
 

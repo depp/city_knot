@@ -606,8 +606,7 @@ CGL.Material MakeSolid(CGL.ChronosGL cgl) {
 }
 
 CGL.Material MakeLogo(
-    CGL.ChronosGL cgl, List<String> logo, RGB textColor, RGB wallColor) {
-  final List<String> logos = GetBuildingLogos(Math.Random());
+    CGL.ChronosGL cgl, List<String> logos, RGB textColor, RGB wallColor) {
   return MakeStandardTextureMaterial(
       kLogoMat, cgl, MakeCanvasBuildingLogos(logos, textColor, wallColor));
 }
@@ -686,7 +685,7 @@ Map<String, CGL.Material> MakeMaterialsForTheme(CGL.ChronosGL cgl,
     kFlashingLightMat: MakeFlashingLight(cgl),
     kRadioTowerMat: MakeRadioTower(cgl),
     kSolidMat: MakeSolid(cgl),
-    kLogoMat: MakeLogoMaterial(cgl, theme.name, GetBuildingLogos(rng))
+    kLogoMat: MakeLogoMaterial(cgl, theme.name, logos)
   };
 
   List<CGL.Material> walls = MakeWallMaterials(cgl, rng, seed, theme.wallStyle);
