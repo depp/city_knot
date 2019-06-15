@@ -11,7 +11,6 @@ import 'geometry.dart';
 import 'theme.dart' as THEME;
 import 'torus.dart' as TORUS;
 
-
 void ExtractTransformsAtTorusSurfaceCity(
     TORUS.TorusKnotHelper tkhelper,
     int kWidth,
@@ -20,7 +19,7 @@ void ExtractTransformsAtTorusSurfaceCity(
     double height,
     VM.Matrix4 mat,
     VM.Matrix3 matNormal) {
-  VM.Vector3 GetVertex(int x, int y) {
+  VM.Vector3 GetVertex(double x, double y) {
     //assert(y < kHeight);
     //assert(x < kWidth);
     tkhelper.surfacePoint(y / kHeight * 2.0 * Math.pi, TORUS.kTubeRadius,
@@ -32,16 +31,42 @@ void ExtractTransformsAtTorusSurfaceCity(
     return tkhelper.point.clone();
   }
 
-  final int y = base.x.floor();
-  final int x = base.y.floor();
-  final int h = base.w.floor();
-  final int w = base.h.floor();
-  VM.Vector3 center = GetVertex(x + w ~/ 2, y + h ~/ 2);
-  VM.Vector3 centerW = GetVertex(x + w ~/ 2 + 1, y + h ~/ 2);
-  VM.Vector3 centerH = GetVertex(x + w ~/ 2, y + h ~/ 2 + 1);
+  // Note x/y swap
+  final double y = base.x;
+  final double x = base.y;
+  final double yc = y + base.w / 2.0;
+  final double xc = x + base.h / 2.0;
+  final double yh = y + base.w;
+  final double xw = x + base.h;
+  //print ("@@@ ${x}x ${y}  ${base.w} ${base.h}");
 
-  VM.Vector3 dir1 = centerW - center;
-  VM.Vector3 dir2 = centerH - center;
+  VM.Vector3 center = GetVertex(xc, yc);
+/*
+  VM.Vector3 p0c = GetVertex(x, yc);
+  VM.Vector3 p1c = GetVertex(xw, yc);
+
+  VM.Vector3 pc0 = GetVertex(xc, y);
+  VM.Vector3 pc1 = GetVertex(xc, yh);
+  double dw = p0c.distanceTo(p1c);
+  double dh = pc0.distanceTo(pc1);
+
+  double scale = Math.min(dw/base.h, dh / base.w);
+  //print ("distance ${base.h}x${base.w}  vs ${dw.floor()}x${dh.floor()}");
+*/
+
+  VM.Vector3 p0c = GetVertex(x, yc);
+  VM.Vector3 p1c = GetVertex(xw, yc);
+
+  VM.Vector3 pc0 = GetVertex(xc, y);
+  VM.Vector3 pc1 = GetVertex(xc, yh);
+  double dw = p0c.distanceTo(p1c);
+  double dh = pc0.distanceTo(pc1);
+
+  double scale = Math.min(dw / base.w, dh / base.h);
+
+  VM.Vector3 dir1 = p1c - p0c;
+  VM.Vector3 dir2 = pc1 - pc0;
+
   VM.Vector3 dir3 = dir1.cross(dir2)..normalize();
   VM.Vector3 pos = center.scaled(0.99);
   //node.setPosFromVec(pos);
@@ -49,6 +74,7 @@ void ExtractTransformsAtTorusSurfaceCity(
   VM.setViewMatrix(mat, VM.Vector3.zero(), dir3, dir1);
   mat.invert();
   mat.rotateX(-Math.pi / 2.0);
+  mat.scale(scale * 0.85);
   mat.setTranslation(pos);
   // TODO: this is not quite correct
   mat.copyRotation(matNormal);
@@ -112,7 +138,8 @@ Shape MakeBuildings(
 
     Rect oldbase = b.base;
 
-    b.base = Rect(-b.base.w, -b.base.h, b.base.w * 2.0, b.base.h * 2.0);
+    b.base = Rect(-b.base.w / 2.0, -b.base.h / 2.0, b.base.w, b.base.h);
+
     _AddOneBuilding(tmp, rng, colors, roofOpt, rf, b);
     b.base = oldbase;
 

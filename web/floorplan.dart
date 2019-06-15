@@ -34,8 +34,8 @@ import 'logging.dart';
 
 const double kMaxCarMovement = 0.5;
 
-const int kMinBuildingSize = 9;
-const int kMinRoadDistance = 25;
+const int kMinBuildingSize = 12;
+const int kMinRoadDistance = 3 * kMinBuildingSize;
 
 const int kTileEmpty = 0;
 
