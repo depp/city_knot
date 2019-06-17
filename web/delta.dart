@@ -405,7 +405,6 @@ class SceneSketch extends Scene {
         "sketch-prep", cgl, sketchPrepVertexShader, sketchPrepFragmentShader);
     program = CGL.RenderProgram(
         "final", cgl, sketchVertexShader, sketchFragmentShader);
-    print(">>>>>>> ${shape}");
 
     Map<String, CGL.Material> materials =
         FACADE.MakeMaterialsForTheme(cgl, theme, kLogos, rng, 0.0);
@@ -472,7 +471,6 @@ class SceneCityNight extends Scene {
 
     Shape shape = CITY.MakeBuildings(cgl, rng, 666.0, floorplan.GetBuildings(),
         tkhelper, kWidth, kHeigth, ["delta", "alpha"], theme);
-    print(">>>>>>> ${shape}");
 
     Map<String, CGL.Material> materials =
         FACADE.MakeMaterialsForTheme(cgl, theme, kLogos, rng, 0.0);
@@ -531,7 +529,6 @@ class SceneCityWireframe extends Scene {
 
     Shape shape = CITY.MakeBuildings(cgl, rng, 666.0, floorplan.GetBuildings(),
         tkhelper, kWidth, kHeight, ["delta", "alpha"], theme);
-    print(">>>>>>> ${shape}");
 
     Map<String, CGL.Material> materials =
         FACADE.MakeMaterialsForTheme(cgl, theme, kLogos, rng, 0.0);
@@ -753,7 +750,7 @@ class AllScenes {
   }
 }
 
-void main() {
+void main2() {
   final CGL.StatsFps fps =
       CGL.StatsFps(HTML.document.getElementById("stats"), "blue", "gray");
   final params = HashParameters();
@@ -782,7 +779,7 @@ void main() {
   } else {
     final int mafl = cgl.MaxAnisotropicFilterLevel();
     FACADE.defaultAnisoLevel = mafl > 4 ? 4 : mafl;
-    print ("setting AnisoLevel to ${FACADE.defaultAnisoLevel}");
+    print("setting AnisoLevel to ${FACADE.defaultAnisoLevel}");
   }
 
   // Cameras
@@ -910,4 +907,12 @@ void main() {
 
   gInitializing.style.display = "none";
   animate(0.0);
+}
+
+void main() {
+  try {
+    main2();
+  } catch (e) {
+    gInitializing.text = "Problem: ${e}";
+  }
 }
