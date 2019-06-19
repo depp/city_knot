@@ -2,52 +2,6 @@
 <head>
     <title>Delta</title>
     <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
-    <!--
-    <script src="src/synth_common.js"></script>
-    <script src="src/effects.js"></script>
-    <script src="src/fm_synth.js"></script>
-    <script src="src/synths.js"></script>
-    <script src="src/sequencer.js"></script>
-    <script src="src/spanish_romance.js"></script>
-
-    <script type="text/javascript">
-    var context;
-    var mondrianSocket;
-    var sequencer;
-    var instruments;
-    var mondrian;
-    var midiInstrument;
-    var effect;
-
-    function playSong() {
-        window.console.log("js play song");
-        context = new AudioContext();
-        context.resume();
-        sequencer = new Sequencer(context);
-        instr = new PolySynth(context, {
-            synth: horn(context),
-            numVoices: 4,
-        });
-        instr.connect(context.destination);
-        duration = Math.max(...SpanishRomance.map(e => e[0] + e[2])) / 1000;
-        events = SpanishRomance.map(e =>  {
-                  return {
-                    time: e[0] / 1000,
-                    callback: t => {
-                      instr.trigger(e[1], 0.1, t);
-                      instr.release(e[1], t + e[2] / 1000);
-                    },
-                };
-        });
-        tempi = [{time: 0, bpm: 120}];
-        pattern = { events, tempi, duration };
-        sequencer.cueUp(pattern);
-        sequencer.startLoop();
-    }
-
-
-    </script>
-    -->
 </head>
 
 <body marginheight="0" marginwidth="0" bgcolor="black" id="body">

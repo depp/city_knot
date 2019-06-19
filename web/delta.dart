@@ -9,7 +9,6 @@ import 'floorplan.dart';
 import 'geometry.dart';
 import 'gol.dart' as GOL;
 import 'logging.dart';
-import 'mondrianjs.dart';
 import 'portal.dart' as PORTAL;
 import 'shaders.dart';
 import 'sky.dart' as SKY;
@@ -37,8 +36,6 @@ final HTML.Element gStatus = HTML.document.querySelector('#status');
 
 final HTML.AudioElement gSoundtrack =
     HTML.document.querySelector("#soundtrack");
-
-final HTML.Element gMusic = HTML.document.querySelector('#music');
 
 final HTML.Element gPaused = HTML.document.querySelector('#paused');
 
@@ -202,15 +199,11 @@ class FinaleCamera extends CGL.Spatial {
 }
 
 CGL.Texture MakeFloorplanTexture(CGL.ChronosGL cgl, Floorplan floorplan) {
-  LogInfo("make floorplan");
-
-  HTML.CanvasElement canvas =
+  LogInfo("make floorplan ${TORUS.kWidth}x${TORUS.kHeight}");
+  final HTML.CanvasElement canvas =
       RenderCanvasWorldMap(floorplan.world_map, kTileToColorsStandard);
-  //dynamic ctx = canvas.getContext("2d");
-  // ctx.fillText("Hello World", 10, 50);
-  // CGL.TextureProperties tp = CGL.TextureProperties()..flipY;
   CGL.TextureProperties tp = CGL.TexturePropertiesMipmap;
-  LogInfo("make floorplan done");
+  LogInfo("make floorplan done ${canvas.width}x${canvas.height}");
   return CGL.ImageTexture(cgl, "noise", canvas, tp);
 }
 
@@ -704,10 +697,12 @@ class AllScenes {
     portal.mat.ForceUniform(CGL.uTime, timeMs);
     finale.mat.ForceUniform(CGL.uTime, timeMs / 1000.0);
 
+    // TODO: switch this all to sky.Draw()
     switch (name) {
       case "wireframe-outside":
         outsideWireframeBuildings.Draw(cgl, perspective);
         outsideStreet.Draw(cgl, perspective);
+        //sky2.Draw(cgl, perspective);
         sky.Draw(cgl, perspective);
         portal.Draw(cgl, perspective);
         break;
@@ -726,6 +721,7 @@ class AllScenes {
       case "sketch-outside":
         outsideSketch.Draw(cgl, perspective);
         outsideStreet.Draw(cgl, perspective);
+        //sky2.Draw(cgl, perspective);
         sky.Draw(cgl, perspective);
         portal.Draw(cgl, perspective);
         break;
@@ -888,14 +884,6 @@ void main2() {
         gSoundtrack.pause();
       }
     }
-  });
-
-  // play midi song via mondrianjs
-  gMusic.onClick.listen((HTML.Event ev) {
-    ev.preventDefault();
-    ev.stopPropagation();
-    playSong();
-    return false;
   });
 
   gPaused.onClick.listen((HTML.Event ev) {
