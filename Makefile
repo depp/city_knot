@@ -1,10 +1,10 @@
 export PATH := $(PATH):$(HOME)/.pub-cache/bin:.
 
-.PHONY=documentation examples tests presubmit buildall
 
 PUB=/usr/lib/dart/bin/pub
 
 VERSION := $(shell grep version pubspec.yaml | cut -f 2 -d\ )
+
 #@ Available Targets:
 #@
 
@@ -20,6 +20,10 @@ get:
 	$(PUB) get
 	${PUB} global activate webdev
 
+#@ upgrade - Upgrade dependencies 
+#@
+upgrade:
+	$(PUB) upgrade
 
 #@ serve - Launch web server (also does just-in-time-transpiling)
 #@         Uses the development compiler.
@@ -42,3 +46,15 @@ serve_release:
 	python3 -m http.server 8080
 
 
+ZIP_DIR = City_Life
+ZIP_BALL = city_life.zip
+#@ zipball - create zip archive for demo submisssion
+#@ 
+zipball:
+	rm -rf ${ZIP_DIR}
+	mkdir ${ZIP_DIR}
+	cp build/delta.html ${ZIP_DIR}/index.html
+	cp build/delta.dart.js ${ZIP_DIR}/delta.dart.js
+	cp web/music.opus ${ZIP_DIR}/music.opus
+	rm -f ${ZIP_BALL}
+	zip ${ZIP_BALL} ${ZIP_DIR} -r -D
