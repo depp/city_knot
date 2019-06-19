@@ -1,5 +1,5 @@
 name: delta
-description:  "delta"
+description:  "Twisted City Life"
 
 environment:
   sdk: '>=2.0.0'
