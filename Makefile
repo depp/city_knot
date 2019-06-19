@@ -58,3 +58,9 @@ zipball:
 	cp web/music.opus ${ZIP_DIR}/music.opus
 	rm -f ${ZIP_BALL}
 	zip ${ZIP_BALL} ${ZIP_DIR} -r -D
+
+#@ clean
+#@
+clean:
+	rm -rf ${ZIP_DIR}
+	rm -rf build/
