@@ -5,13 +5,19 @@
 
 The demo consists of a exploring a cityscape wrapped around a torusknot 
 
-Target duration: 3 min
+Duration: about 3 min
 
-License; GPL
+License: GPL
+
+Releases at (@party)[http://atparty-demoscene.net] in June 2019
+
+Technologies: Dart, WebGL2
+
+Note, WebGL2 is **not** supported in Safari
 
 ## Live Version
 
-http://art.muth.org/delta.html 
+http://art.muth.org/twisted_city_life.html 
 
 ( Developer Mode http://art.muth.org/delta.html#develop )
 
