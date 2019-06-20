@@ -9,7 +9,7 @@ Duration: about 3 min
 
 License: GPL
 
-Releases at (@party)[http://atparty-demoscene.net] in June 2019
+Releases at [@party[(http://atparty-demoscene.net) in June 2019
 
 Technologies: Dart, WebGL2
 
@@ -19,7 +19,7 @@ Note, WebGL2 is **not** supported in Safari
 
 http://art.muth.org/twisted_city_life.html 
 
-( Developer Mode http://art.muth.org/delta.html#develop )
+( Developer Mode http://art.muth.org/twisted_city_life.html#develop )
 
 ## Development
 
