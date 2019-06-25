@@ -23,7 +23,7 @@ void ExtractTransformsAtTorusSurfaceCity(
     //assert(y < kHeight);
     //assert(x < kWidth);
     // -0.5 is intended to avoid having buildings flying above the surface
-    tkhelper.surfacePoint(y / kHeight * 2.0 * Math.pi, TORUS.kTubeRadius - 0.5,
+    tkhelper.surfacePoint(y / kHeight * 2.0 * Math.pi, TORUS.kTubeRadius - 1.0,
         x / kWidth * 2.0 * Math.pi);
     //var a2 = torus.vertices[x + y * (kWidth + 1)];
     //var a1 = tkhelper.point;
