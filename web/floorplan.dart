@@ -586,7 +586,7 @@ class Floorplan {
         double altitude = 10.0 + rng.nextInt(15);
         int offset = 1;
         int kind = kTileBuildingSimple;
-        GEOMETRY.Rect plot = GEOMETRY.Rect(x + 0.0, y + 0.0, w + 0.0, h +0.0);
+        GEOMETRY.Rect plot = GEOMETRY.Rect(x + 0.0, y + 0.0, w + 0.0, h + 0.0);
         // TODO
 
         /*
@@ -691,5 +691,14 @@ HTML.CanvasElement RenderCanvasWorldMap(WorldMap wm,
     }
   }
   c.putImageData(id, 0, 0);
+
   return canvas;
+
+  // reduce canvas by 2 in w dimensions
+  /*
+  return HTML.CanvasElement()
+    ..width = w
+    ..height = h
+    ..context2D.drawImageScaled(canvas, 0, 0, w, h);
+    */
 }
