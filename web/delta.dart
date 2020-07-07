@@ -16,6 +16,7 @@ import 'theme.dart' as THEME;
 import 'torus.dart' as TORUS;
 import 'facade.dart' as FACADE;
 import 'config.dart' as CONFIG;
+import 'wscapture.dart' as WSCAPTURE;
 
 final double zNear = 0.1;
 final double zFar = 20000.0;
@@ -767,6 +768,7 @@ void main2() {
 
   final HTML.CanvasElement canvas =
       HTML.document.querySelector('#webgl-canvas');
+  WSCAPTURE.stealContext();
   final CGL.ChronosGL cgl = CGL.ChronosGL(canvas)..enable(CGL.GL_CULL_FACE);
 
   var ext = cgl.GetGlExtensionAnisotropic();
@@ -811,6 +813,7 @@ void main2() {
   double lastTimeMs = 0.0;
 
   String lastTheme;
+  bool didStartRecording = false;
 
   void animate(num timeMs) {
     double elapsed = timeMs - lastTimeMs;
@@ -835,11 +838,12 @@ void main2() {
           gSoundtrack.paused) {
         gPaused.style.display = "block";
       }
-      if (gSoundtrack.ended || gSoundtrack.currentTime == 0.0) {
-        print("Music started ${gSoundtrack.ended} ${gSoundtrack.currentTime}");
-        gSoundtrack.play();
-      } else {
-        t = 1000.0 * gSoundtrack.currentTime;
+      if (!didStartRecording) {
+        WSCAPTURE.startRecording();
+        didStartRecording = true;
+      }
+      if (WSCAPTURE.beginFrame()) {
+        t = WSCAPTURE.currentTimeMS(t);
         // also check gMusic.ended
         for (ScriptScene s in gScript) {
           if (t < s.durationMs) {
@@ -849,9 +853,14 @@ void main2() {
                 s.name, perspective, t, s.speed, s.radius, tkc, iac, fc, oc);
             allScenes.RenderScene(s.name, cgl, perspective, t);
             gTheme.value = s.name;
+            t = -1;
             break;
           }
           t -= s.durationMs;
+        }
+        WSCAPTURE.endFrame();
+        if (t >= 0) {
+          WSCAPTURE.stopRecording();
         }
       }
     } else {

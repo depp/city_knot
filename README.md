@@ -1,5 +1,6 @@
 # Twisted City Life
 
+Note: This branch exists to get a good video recording of the demo, as presented at At Party. See RECORDING.md.
 
 ## About 
 
