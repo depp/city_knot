@@ -8,7 +8,7 @@ Duration: about 3 min
 
 Video: https://www.youtube.com/watch?v=asV6yIC_bsk
 
-License: GPL see (LICENSE)[LICENSE]
+License: GPL see [LICENSE](LICENSE)
 
 Released at [@party](http://atparty-demoscene.net) in June 2019.
 
